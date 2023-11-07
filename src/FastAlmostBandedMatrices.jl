@@ -3,14 +3,14 @@ module FastAlmostBandedMatrices
 import PrecompileTools: @recompile_invalidations, @setup_workload, @compile_workload
 
 @recompile_invalidations begin
-    using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LinearAlgebra,
-        MatrixFactorizations, Reexport
+    using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LazyArrays,
+        LinearAlgebra, MatrixFactorizations, Reexport
 end
 
 import ArrayLayouts: MemoryLayout, sublayout, sub_materialize, MatLdivVec, materialize!,
     triangularlayout, triangulardata, zero!, _copyto!, colsupport, rowsupport, _qr, _qr!,
     _factorize
-import BandedMatrices: _banded_qr!, bandeddata
+import BandedMatrices: _banded_qr!, bandeddata, banded_qr_lmul!
 import LinearAlgebra: ldiv!
 import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPackedQLayout
 
@@ -104,6 +104,16 @@ function Base.setindex!(B::AlmostBandedMatrix, v, k::Integer, j::Integer)
     return
 end
 
+function sublayout(::AlmostBandedLayout,
+        ::Type{<:Tuple{AbstractUnitRange{Int}, AbstractUnitRange{Int}}})
+    return AlmostBandedLayout()
+end
+
+sub_materialize(::AbstractAlmostBandedLayout, V) = AlmostBandedMatrix(V)
+
+bandpart(V::SubArray) = view(bandpart(parent(V)), parentindices(V)...)
+fillpart(V::SubArray) = view(fillpart(parent(V)), parentindices(V)...)
+
 # --------------
 # ArrayInterface
 # --------------
@@ -157,24 +167,17 @@ function _almostbanded_qr!(A::AbstractMatrix{T}, τ::AbstractVector{T}) where {T
     return _almostbanded_qr!(A, τ, min(m - 1 + !(T <: Real), n))
 end
 
-# TODO: We can optimize the memory usage further, but we can do it once it becomes a
-#       bottleneck
 @views function _almostbanded_qr!(A::AbstractMatrix, τ::AbstractVector, ncols::Int)
-    B, L_ = bandpart(A), fillpart(A)
+    T = eltype(A)
+    B, L = bandpart(A), fillpart(A)
     l, u = bandwidths(B)
     m, n = size(A)
-    mf = size(L_, 1)
-    finish_part_setindex!(B, L_)
+    mf = size(L, 1)
+    finish_part_setindex!(B, L)
 
-    # Materialize the fill part into a complete matrix
-    L = similar(L_, m, n)
-    copyto!(L[1:size(L_, 1), :], L_)
-    fill!(L[(size(L_, 1) + 1):end, :], zero(eltype(L_)))
-
-    ## L = U * L_
-    U = similar(L_, m, mf)
-    fill!(U, zero(eltype(L_)))
-    fill!(U[diagind(U)], one(eltype(L_)))
+    U = similar(L, m, mf)
+    fill!(U, zero(eltype(L)))
+    fill!(U[diagind(U)], one(eltype(L)))
 
     k = 1
     while k ≤ ncols
@@ -186,21 +189,24 @@ end
         τv = τ[jr3]
         R, _ = _banded_qr!(S, τv, length(jr3))
         Q = QRPackedQ(R, τv)
+
         B_right = B[kr, jr2]
-        L_right = L[kr, jr2]
+        L_right = L[:, jr2]
+        U′ = U[kr, :]
         for j in 1:length(jr2)
-            B_right[(j + 1):end, j] .-= L_right[(j + 1):end, j]
+            muladd!(-one(T), U′[(j + 1):end, :], L_right[:, j], one(T),
+                B_right[(j + 1):end, j])
         end
-        lmul!(Q', B_right)
-        lmul!(Q', U[kr, :])
-        mul!(L_right, U[kr, :], L_[:, jr2])
+        banded_qr_lmul!(Q', B_right)
+        banded_qr_lmul!(Q', U′)
         for j in 1:length(jr2)
-            B_right[(j + 1):end, j] .+= L_right[(j + 1):end, j]
+            muladd!(one(T), U′[(j + 1):end, :], L_right[:, j], one(T),
+                B_right[(j + 1):end, j])
         end
         k = last(jr1) + 1
     end
 
-    return AlmostBandedMatrix{eltype(A)}(B, L[1:(m - u), :]), τ
+    return AlmostBandedMatrix{eltype(A)}(B, Mul(U, L)), τ
 end
 
 function getQ(F::QR{<:Any, <:AlmostBandedMatrix})
@@ -219,16 +225,73 @@ function ldiv!(A::QR{<:Any, <:AlmostBandedMatrix}, B::AbstractVecOrMat)
 end
 
 # needed for adaptive QR
-function Base.materialize!(M::Lmul{<:QRPackedQLayout{AlmostBandedLayout}})
+function Base.materialize!(M::Lmul{<:QRPackedQLayout{<:AlmostBandedLayout}})
     return lmul!(QRPackedQ(bandpart(M.A.factors), M.A.τ), M.B)
 end
-function Base.materialize!(M::Lmul{<:AdjQRPackedQLayout{AlmostBandedLayout}})
+function Base.materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AlmostBandedLayout}})
     Q = M.A'
     return lmul!(QRPackedQ(bandpart(Q.factors), Q.τ)', M.B)
 end
 
-# TODO: Upper Triangular `ldiv!`
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML <: AlmostBandedLayout} = Tri{ML}()
+
+@views function _almostbanded_upper_ldiv!(::Type{Tri}, R::AbstractMatrix,
+        b::AbstractVector{T}, buffer) where {T, Tri}
+    B, L = bandpart(R), fillpart(R)
+    U, V = L.A, L.B
+    fill!(buffer, zero(T))
+
+    l, u = bandwidths(B)
+    k = n = size(R, 2)
+
+    while k > 0
+        kr = max(1, k - u):k
+        jr1 = (k + 1):(k + u + 1)
+        jr2 = (k + u + 2):(k + 2u + 2)
+        bv = b[kr]
+        if jr2[1] < n
+            muladd!(one(T), V[:, jr2], b[jr2], one(T), buffer)
+            muladd!(-one(T), U[kr, :], buffer, one(T), bv)
+        end
+        if jr1[1] < n
+            muladd!(-one(T), R[kr, jr1], b[jr1], one(T), bv)
+        end
+        materialize!(Ldiv(Tri(B[kr, kr]), bv))
+        k = kr[1] - 1
+    end
+
+    return b
+end
+
+function Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'N', AlmostBandedLayout}})
+    R, x = M.A, M.B
+    A = triangulardata(R)
+    r = size(A.fill.A, 2)
+    _almostbanded_upper_ldiv!(UpperTriangular, A, x, Vector{eltype(M)}(undef, r))
+    return x
+end
+
+function Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'U', AlmostBandedLayout}})
+    R, x = M.A, M.B
+    A = triangulardata(R)
+    r = size(A.fill.A, 2)
+    _almostbanded_upper_ldiv!(UnitUpperTriangular, A, x, Vector{eltype(M)}(undef, r))
+    return x
+end
+
+function Base.materialize!(M::MatLdivVec{TriangularLayout{'L', 'N', AlmostBandedLayout}})
+    R, x = M.A, M.B
+    A = triangulardata(R)
+    materialize!(Ldiv(LowerTriangular(bandpart(A)), x))
+    return x
+end
+
+function Base.materialize!(M::MatLdivVec{TriangularLayout{'L', 'U', AlmostBandedLayout}})
+    R, x = M.A, M.B
+    A = triangulardata(R)
+    materialize!(Ldiv(UnitLowerTriangular(bandpart(A)), x))
+    return x
+end
 
 # -------------
 # LinearAlgebra

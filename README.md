@@ -17,6 +17,11 @@ repository.
 
 ```julia
 using FastAlmostBandedMatrices
+
+m = 2
+n = 10
+
+A1 = AlmostBandedMatrix(rand(Float64, m, n), brand(Float64, n, n, m + 1, m))
 ```
 
 ## Benchmarks
@@ -38,52 +43,102 @@ A3 = SemiseparableMatrices.AlmostBandedMatrix(copy(A1.bands),
 A4 = sparse(A2)
 
 @benchmark qr($A1)
-# BenchmarkTools.Trial: 2708 samples with 1 evaluation.
-#  Range (min … max):  1.015 ms … 8.032 ms  ┊ GC (min … max):  0.00% … 56.96%
-#  Time  (median):     1.147 ms             ┊ GC (median):     0.00%
-#  Time  (mean ± σ):   1.840 ms ± 1.427 ms  ┊ GC (mean ± σ):  15.26% ± 18.02%
+# BenchmarkTools.Trial: 6579 samples with 1 evaluation.
+#  Range (min … max):  707.260 μs …   5.453 ms  ┊ GC (min … max): 0.00% … 76.64%
+#  Time  (median):     731.708 μs               ┊ GC (median):    0.00%
+#  Time  (mean ± σ):   757.683 μs ± 246.801 μs  ┊ GC (mean ± σ):  2.62% ±  6.52%
 
-#   ▅█▅▂▁                             ▃▁▂▁           ▂▂        
-#   ██████▇▇▇▆▅▆▁▃▁▁▁▁▄▃▁▁▄▁▃▄▃▁▁▁▃▁▃▃█████▇▆▅▆▅▄▃▅▅▃███▆▅▄▆▆ █
-#   1.02 ms     Histogram: log(frequency) by time     5.96 ms <
+#    ▆▄█▄                                                          
+#   ▅████▇▄▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▁▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▁▂▂▂▁▁▂▂ ▃
+#   707 μs           Histogram: frequency by time         1.15 ms <
 
-#  Memory estimate: 7.94 MiB, allocs estimate: 16.
+#  Memory estimate: 320.70 KiB, allocs estimate: 11.
 
 @benchmark qr($A2)
-# BenchmarkTools.Trial: 172 samples with 1 evaluation.
-#  Range (min … max):  24.451 ms … 39.738 ms  ┊ GC (min … max): 0.00% … 0.00%
-#  Time  (median):     28.915 ms              ┊ GC (median):    0.00%
-#  Time  (mean ± σ):   29.063 ms ±  2.653 ms  ┊ GC (mean ± σ):  0.92% ± 2.65%
+# BenchmarkTools.Trial: 179 samples with 1 evaluation.
+#  Range (min … max):  25.307 ms … 35.189 ms  ┊ GC (min … max): 0.00% … 0.00%
+#  Time  (median):     27.488 ms              ┊ GC (median):    0.00%
+#  Time  (mean ± σ):   27.975 ms ±  2.168 ms  ┊ GC (mean ± σ):  1.55% ± 3.39%
 
-#       ▃               █▂  ▂  ▂               ▂                 
-#   ▆▄▃▅█▄▃▅▃▄▆▄▅▄▄▄▄▃▅▅██▇▇██▆█▆▅▆▄█▄▇▆▇▆▃▃▃▄▄█▁▃▄▁▃▃▃▄▃▁▁▃▁▃▃ ▃
-#   24.5 ms         Histogram: frequency by time          35 ms <
+#   ▂█▄▃ ▃  ▂ ▂ ▄▂ ▂  ▂ ▂▂                                       
+#   ██████▇███████▇████▆██▆▆▅▃▆▅▅▇▁▅▃▃▅▇▆▃▃▃▃▃▁▃▁▁▃▁▁▃▃▃▃▁▁▁▅▁▃ ▃
+#   25.3 ms         Histogram: frequency by time        34.4 ms <
 
 #  Memory estimate: 8.18 MiB, allocs estimate: 6.
 
 @benchmark qr($A3)
-# BenchmarkTools.Trial: 1548 samples with 1 evaluation.
-#  Range (min … max):  2.791 ms …   6.872 ms  ┊ GC (min … max): 0.00% … 53.51%
-#  Time  (median):     2.941 ms               ┊ GC (median):    0.00%
-#  Time  (mean ± σ):   3.226 ms ± 791.075 μs  ┊ GC (mean ± σ):  8.59% ± 14.11%
+# BenchmarkTools.Trial: 900 samples with 1 evaluation.
+#  Range (min … max):  3.149 ms … 16.527 ms  ┊ GC (min … max):  0.00% … 69.59%
+#  Time  (median):     4.157 ms              ┊ GC (median):     0.00%
+#  Time  (mean ± σ):   5.557 ms ±  3.123 ms  ┊ GC (mean ± σ):  20.55% ± 22.17%
 
-#   ▄▅██▆                                              ▁▁▂▂▁ ▁   
-#   █████▇▇▇▆▅▄▆▄▆▄▄▄▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▆▇███████▆ █
-#   2.79 ms      Histogram: log(frequency) by time      5.53 ms <
+#   ▆█▃▁ ▁       ▂▆▄                                    ▁       
+#   ██████▇▇█▇██████▇▄▅▅▁▁▁▄▁▄▁▁▁▁▁▁▄▁▁▁▁▁▁▁▁▆▅▇▇▇██▆█▆██▇▇▇▅▆ █
+#   3.15 ms      Histogram: log(frequency) by time       14 ms <
 
 #  Memory estimate: 6.32 MiB, allocs estimate: 65108.
 
 @benchmark qr($A4)
-# BenchmarkTools.Trial: 441 samples with 1 evaluation.
-#  Range (min … max):   8.352 ms … 96.160 ms  ┊ GC (min … max): 0.00% … 1.29%
-#  Time  (median):      9.961 ms              ┊ GC (median):    0.00%
-#  Time  (mean ± σ):   11.332 ms ±  5.821 ms  ┊ GC (mean ± σ):  3.33% ± 5.91%
+# BenchmarkTools.Trial: 414 samples with 1 evaluation.
+#  Range (min … max):   9.350 ms … 17.288 ms  ┊ GC (min … max):  0.00% … 37.45%
+#  Time  (median):     12.411 ms              ┊ GC (median):     9.47%
+#  Time  (mean ± σ):   12.068 ms ±  1.869 ms  ┊ GC (mean ± σ):  11.46% ± 10.23%
 
-#     ▃█▅       ▁                                                
-#   ▅████▇▄▃▂▄▇██▇▅▂▂▂▂▂▂▁▃▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▂▃▃▇▆▇▃▄▃▂▂▂▂▁▁▁▁▁▁▂ ▃
-#   8.35 ms         Histogram: frequency by time        18.6 ms <
+#        ▃█▄▇▄                  ▁ ▄▂▁▃▃                          
+#   ▃▃▄▆▇█████▆▄▄▂▂▃▃▅▃▂▂▃▁▂▃▃▁▆█▅█████▇▆▅▁▄▂▃▃▁▁▃▃▃▃▄▂▃▄▃▃▂▃▃▂ ▄
+#   9.35 ms         Histogram: frequency by time        16.5 ms <
 
-#  Memory estimate: 25.44 MiB, allocs estimate: 169.
+#  Memory estimate: 25.44 MiB, allocs estimate: 167.
+
+b = randn(n)
+
+@benchmark $A1 \ $b
+# BenchmarkTools.Trial: 5771 samples with 1 evaluation.
+#  Range (min … max):  820.926 μs …   4.211 ms  ┊ GC (min … max): 0.00% … 75.87%
+#  Time  (median):     836.495 μs               ┊ GC (median):    0.00%
+#  Time  (mean ± σ):   864.003 μs ± 253.387 μs  ┊ GC (mean ± σ):  2.46% ±  6.52%
+
+#   ▅█▇▅▄▂                                                        ▁
+#   ███████▇▅▆▆▆▇▇▅▆▄▅▁▁▁▃▃▁▃▁▁▁▁▁▃▁▁▁▁▃▁▁▁▄▃▃▃▁▃▃▃▃▁▁▁▃▁▁▁▁▃▄▄▄▄ █
+#   821 μs        Histogram: log(frequency) by time       1.31 ms <
+
+#  Memory estimate: 344.67 KiB, allocs estimate: 16.
+
+@benchmark $A2 \ $b
+# BenchmarkTools.Trial: 685 samples with 1 evaluation.
+#  Range (min … max):  6.424 ms … 12.427 ms  ┊ GC (min … max): 0.00% … 21.60%
+#  Time  (median):     6.797 ms              ┊ GC (median):    0.00%
+#  Time  (mean ± σ):   7.278 ms ±  1.040 ms  ┊ GC (mean ± σ):  5.60% ±  9.66%
+
+#      ▃▇█▁                                                     
+#   ▃▄▆████▆▄▃▃▃▃▃▃▂▃▃▂▂▂▁▂▂▂▁▂▁▁▁▂▁▁▂▁▁▁▁▂▃▃▃▄▃▄▃▃▂▃▂▂▂▁▂▁▂▂▂ ▃
+#   6.42 ms        Histogram: frequency by time        10.2 ms <
+
+#  Memory estimate: 7.64 MiB, allocs estimate: 4.
+
+@benchmark $A3 \ $b
+# BenchmarkTools.Trial: 742 samples with 1 evaluation.
+#  Range (min … max):  3.821 ms … 19.027 ms  ┊ GC (min … max):  0.00% … 54.32%
+#  Time  (median):     5.582 ms              ┊ GC (median):     0.00%
+#  Time  (mean ± σ):   6.733 ms ±  3.499 ms  ┊ GC (mean ± σ):  20.65% ± 22.34%
+
+#   █▇▁▂ ▁▁▁ ▁ ▁ ▁▂▆▅▂                          ▁               
+#   ████▇█████████████▄▄▅▄▄▁▄▁▁▁▁▁▄▁▁▁▁▁▁▁▇▇██▆████▇██▆█▇▆▆█▁▅ █
+#   3.82 ms      Histogram: log(frequency) by time     15.9 ms <
+
+#  Memory estimate: 7.55 MiB, allocs estimate: 78253.
+
+@benchmark $A4 \ $b
+# BenchmarkTools.Trial: 2510 samples with 1 evaluation.
+#  Range (min … max):  1.753 ms …   5.893 ms  ┊ GC (min … max): 0.00% … 65.44%
+#  Time  (median):     1.843 ms               ┊ GC (median):    0.00%
+#  Time  (mean ± σ):   1.988 ms ± 624.193 μs  ┊ GC (mean ± σ):  6.63% ± 12.28%
+
+#   ▆█▇▄▁                                                       ▁
+#   ██████▆▃▅▄▁▁▁▅▁▃▁▁▁▁▁▁▁▁▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▃▇███▇▇▆ █
+#   1.75 ms      Histogram: log(frequency) by time      4.78 ms <
+
+#  Memory estimate: 2.21 MiB, allocs estimate: 82.
 ```
 
 ## Public API
@@ -104,7 +159,7 @@ finish_part_setindex!
     + [ ] Matrix Vector Multiply
     + [ ] Matrix Matrix Multiply
     + [x] QR Factorization
-    + [ ] UpperTriangular ldiv!
+    + [x] UpperTriangular ldiv!
     + [ ] SubArrays
 
 2. Broadcasting won't be fast and will materialize the array into a standard Julia Array.
