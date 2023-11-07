@@ -156,8 +156,8 @@ finish_part_setindex!
 1. Not all operations are meant to be fast. Currently only the following operations are
    fast or planned to be fast:
 
-    + [ ] Matrix Vector Multiply
-    + [ ] Matrix Matrix Multiply
+    + [x] Matrix Vector Multiply
+    + [x] Matrix Matrix Multiply
     + [x] QR Factorization
     + [x] UpperTriangular ldiv!
     + [ ] SubArrays

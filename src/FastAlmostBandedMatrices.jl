@@ -9,7 +9,7 @@ end
 
 import ArrayLayouts: MemoryLayout, sublayout, sub_materialize, MatLdivVec, materialize!,
     triangularlayout, triangulardata, zero!, _copyto!, colsupport, rowsupport, _qr, _qr!,
-    _factorize
+    _factorize, muladd!
 import BandedMatrices: _banded_qr!, bandeddata, banded_qr_lmul!
 import LinearAlgebra: ldiv!
 import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPackedQLayout
@@ -124,7 +124,7 @@ function ArrayInterface.fast_scalar_indexing(A::AlmostBandedMatrix)
 end
 
 function ArrayInterface.qr_instance(A::AlmostBandedMatrix{T}, pivot = NoPivot()) where {T}
-    return qr(AlmostBandedMatrix{T}(brand(T, 2, 2, 1, 1), similar(A.fill, 1, 2)))
+    return qr(AlmostBandedMatrix{T}(similar(A.bands, 0, 0), similar(A.fill, 0, 0)))
 end
 
 # -------------
@@ -293,9 +293,17 @@ function Base.materialize!(M::MatLdivVec{TriangularLayout{'L', 'U', AlmostBanded
     return x
 end
 
-# -------------
-# LinearAlgebra
-# -------------
+# ---------------
+# Matrix Multiply
+# ---------------
+
+@views function muladd!(α, A::AlmostBandedMatrix, B::AbstractVecOrMat, β,
+        C::AbstractVecOrMat)
+    L = fillpart(A)
+    muladd!(α, L, B, β, selectdim(C, 1, 1:size(L, 1)))
+    muladd!(α, exclusive_bandpart(A), B, β, selectdim(C, 1, (size(L, 1) + 1):size(C, 1)))
+    return C
+end
 
 export AlmostBandedMatrix, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!
 
