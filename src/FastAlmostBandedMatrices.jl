@@ -145,7 +145,7 @@ end
 
 @inline function rowsupport(::AbstractAlmostBandedLayout, A, k)
     l, _ = almostbandwidths(A)
-    if k ≤ almostbandedrank(A)
+    if maximum(k) ≤ almostbandedrank(A)
         return max(1, minimum(k) - l):size(A, 2)
     else
         return max(1, minimum(k) - l):min(maximum(k) + l, size(A, 2))
