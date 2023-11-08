@@ -23,12 +23,33 @@ import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPa
 abstract type AbstractAlmostBandedLayout <: MemoryLayout end
 struct AlmostBandedLayout <: AbstractAlmostBandedLayout end
 
+"""
+    AlmostBandedMatrix(bands::BandedMatrix, fill)
+    AlmostBandedMatrix{T}(bands, fill)
+
+An `AlmostBandedMatrix` is a matrix with a `bands` part and a `fill` part. For efficient
+operations we store the matrix as a BandedMatrix and another AbstractMatrix with an
+overlapping bit.
+
+[3 3 3 2 2 2 2 ... 2 2 2]\\
+[3 3 3 3 2 2 2 ... 2 2 2]\\
+[0 1 1 1 1 0 0 ... 0 0 0]\\
+[0 0 1 1 1 1 0 ... 0 0 0]\\
+[.......................]\\
+[.......................]\\
+[.......................]\\
+[0 0 0 0 0 0 0 ... 1 1 0]\\
+[0 0 0 0 0 0 0 ... 1 1 1]
+
+where `2`'s are the fill part, and `1`'s are the bands part, and `3`'s are the overlapping
+part.
+"""
 @concrete struct AlmostBandedMatrix{T} <: LayoutMatrix{T}
     bands
     fill
 end
 
-function AlmostBandedMatrix(fill::AbstractMatrix, bands::BandedMatrix)
+function AlmostBandedMatrix(bands::BandedMatrix, fill::AbstractMatrix)
     @assert size(fill, 2) == size(bands, 2)
     T = promote_type(eltype(fill), eltype(bands))
     @assert bandwidths(bands)[1] ≥ size(fill, 1) - 1
@@ -52,9 +73,25 @@ end
     return nothing
 end
 
+"""
+    bandpart(A::AlmostBandedMatrix)
+
+Banded Part of the AlmostBandedMatrix.
+"""
 @inline bandpart(A::AlmostBandedMatrix) = A.bands
+
+"""
+    fillpart(A::AlmostBandedMatrix)
+
+Fill Part of the AlmostBandedMatrix.
+"""
 @inline fillpart(A::AlmostBandedMatrix) = A.fill
 
+"""
+    exclusive_bandpart(A::AlmostBandedMatrix)
+
+Banded Part of the AlmostBandedMatrix without the overlapping part.
+"""
 @inline function exclusive_bandpart(A)
     B, F = bandpart(A), fillpart(A)
     return @view(B[(size(F, 1) + 1):end, :])
@@ -304,6 +341,30 @@ end
     muladd!(α, exclusive_bandpart(A), B, β, selectdim(C, 1, (size(L, 1) + 1):size(C, 1)))
     return C
 end
+
+# ---------------------
+# Precompile Some Stuff
+# ---------------------
+
+@setup_workload begin
+    m = 2
+    n = 10
+    for T in (Float32, Float64)
+        B = brand(T, n, n, m + 1, m)
+        F = rand(T, m, n)
+
+        @compile_workload begin
+            A = AlmostBandedMatrix(B, F)
+
+            # QR
+            fact = qr(A)
+
+            # Linear Solve
+            fact \ rand(T, n)
+        end
+    end
+end
+
 
 export AlmostBandedMatrix, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!
 

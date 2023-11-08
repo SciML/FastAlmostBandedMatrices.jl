@@ -2,6 +2,11 @@
 
 [![Join the chat at https://julialang.zulipchat.com #sciml-bridged](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged)
 
+[![CI](https://github.com/avik-pal/FastAlmostBandedMatrices.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/FastAlmostBandedMatrices.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/LuxDL/FastAlmostBandedMatrices.jl/branch/main/graph/badge.svg?)](https://codecov.io/gh/LuxDL/FastAlmostBandedMatrices.jl)
+[![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/FastAlmostBandedMatrices)](https://pkgs.genieframework.com?packages=FastAlmostBandedMatrices)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor%27s%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
@@ -21,7 +26,7 @@ using FastAlmostBandedMatrices
 m = 2
 n = 10
 
-A1 = AlmostBandedMatrix(rand(Float64, m, n), brand(Float64, n, n, m + 1, m))
+A1 = AlmostBandedMatrix(brand(Float64, n, n, m + 1, m), rand(Float64, m, n))
 ```
 
 ## Benchmarks
@@ -36,7 +41,7 @@ n = 1000
 II = zeros(n, m)
 II[diagind(II)] .= 1
 
-A1 = AlmostBandedMatrix(rand(Float64, m, n), brand(Float64, n, n, m + 1, m))
+A1 = AlmostBandedMatrix(brand(Float64, n, n, m + 1, m), rand(Float64, m, n))
 A2 = Matrix(A1)
 A3 = SemiseparableMatrices.AlmostBandedMatrix(copy(A1.bands),
     SemiseparableMatrices.LowRankMatrix(II, copy(A1.fill)))
@@ -143,6 +148,8 @@ b = randn(n)
 
 ## Public API
 
+For documentation of the public API, please use the REPL help mode.
+
 ```
 AlmostBandedMatrix
 bandpart
@@ -172,9 +179,3 @@ finish_part_setindex!
 4. No support for `fast_scalar_indexing == false` arrays.
 
 5. `LinearSolve.jl` has proper dispatches setup.
-
-6. Internally for QR Factorization, we materialize the entire matrix for fast BLAS calls.
-   This would be undesirable for problems where memory is a concern. Use
-   `SemiseparableMatrices.jl` for these cases, however, that turns out to be quite slow
-   since `1 gemm` call gets expanded into `m gemv` calls where `m` is of the order of the
-   dimension of the matrix.
