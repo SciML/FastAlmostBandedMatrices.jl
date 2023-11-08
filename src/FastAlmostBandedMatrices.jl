@@ -343,11 +343,38 @@ function getR(F::QR{<:Any, <:AlmostBandedMatrix})
     return UpperTriangular(view(F.factors, 1:n, 1:n))
 end
 
-function ldiv!(A::QR{<:Any, <:AlmostBandedMatrix}, B::AbstractVecOrMat)
+function _almostbanded_longrect_ldiv!(A::QR, B)
+    m, n = size(A)
+    R = A.factors
+    lmul!(adjoint(A.Q), B)
+    B̃ = view(B, 1:n, :)
+    B̃ .= Ldiv(UpperTriangular(view(R, 1:n, 1:n)), B̃)
+    return B
+end
+
+function _almostbanded_square_ldiv!(A::QR, B)
     R = A.factors
     lmul!(adjoint(A.Q), B)
     B .= Ldiv(UpperTriangular(R), B)
     return B
+end
+
+_almostbanded_widerect_ldiv!(::QR{T}, B) where {T} = error("Not implemented")
+
+const UpperLayoutMatrix{T} = UpperTriangular{T, <:LayoutMatrix{T}}
+
+for Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix,
+    :LayoutMatrix)
+    @eval function ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::$Typ{T}) where {T}
+        m, n = size(A)
+        if m == n
+            _almostbanded_square_ldiv!(A, B)
+        elseif n > m
+            _almostbanded_widerect_ldiv!(A, B)
+        else
+            _almostbanded_longrect_ldiv!(A, B)
+        end
+    end
 end
 
 # needed for adaptive QR
@@ -373,16 +400,20 @@ end
     return U, x
 end
 
-@inline __original_almostbandedrank(A) = __original_almostbandedrank(fillpart(A), A)
-@inline function __original_almostbandedrank(L, A)
-    _, V = __arguments(L, A, Val(false))
-    return size(V, 1)
+@inline __lowrankfillpart(R) = __arguments(fillpart(R), R, Val(false))
+@inline @views function __lowrankfillpart(R::SubArray)
+    pR = parent(R)
+    pU, pV = __lowrankfillpart(pR)
+    idx1, idx2 = parentindices(R)
+    return pU[idx1, :], pV[:, idx2]
 end
+
+@inline __original_almostbandedrank(A) = size(first(__lowrankfillpart(A)), 2)
 
 @views function _almostbanded_upper_ldiv!(::Type{Tri}, R::AbstractMatrix,
         b::AbstractVector{T}, buffer) where {T, Tri}
-    B, L = bandpart(R), fillpart(R)
-    U, V = __arguments(L, R, Val(true))
+    B = bandpart(R)
+    U, V = __lowrankfillpart(R)
     fill!(buffer, zero(T))
 
     l, u = bandwidths(B)

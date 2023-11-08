@@ -38,7 +38,7 @@ using SafeTestsets, Test
         b = randn(n)
         @test A \ b ≈ Matrix(A) \ b
         @test all(A \ b .=== F \ b)
-        @test_broken all(A \ b .=== F.R \ (F.Q' * b))
+        @test all(A \ b .=== F.R \ (F.Q' * b))
         Q̃ = QRPackedQ(F.factors, F.τ)
         @test Matrix(Q̃) ≈ Matrix(F.Q)
         @test lmul!(Q̃, copy(b)) ≈ lmul!(F.Q, copy(b)) ≈ Matrix(F.Q) * b
