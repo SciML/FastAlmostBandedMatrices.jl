@@ -26,6 +26,10 @@ struct AlmostBandedLayout <: AbstractAlmostBandedLayout end
 """
     AlmostBandedMatrix(bands::BandedMatrix, fill)
     AlmostBandedMatrix{T}(bands, fill)
+    AlmostBandedMatrix(::UndefInitializer, [::Type{T} = Float64], mn::NTuple{2, Integer},
+        lu::NTuple{2, Integer}, rank::Integer)
+    AlmostBandedMatrix{T}(::UndefInitializer, mn::NTuple{2, Integer},
+        lu::NTuple{2, Integer}, rank::Integer)
 
 An `AlmostBandedMatrix` is a matrix with a `bands` part and a `fill` part. For efficient
 operations we store the matrix as a BandedMatrix and another AbstractMatrix with an
@@ -49,12 +53,30 @@ part.
     fill
 end
 
+function AlmostBandedMatrix(::UndefInitializer, ::Type{T}, mn::NTuple{2, Integer},
+        lu::NTuple{2, Integer}, rank::Integer) where {T}
+    @assert lu[2] ≥ rank - 1
+    @assert rank≥1 "Rank 0 fill array makes it a BandedMatrix."
+    bands = BandedMatrix{T}(undef, mn, lu)
+    fill = Matrix{T}(undef, rank, mn[2])
+    return AlmostBandedMatrix{T}(bands, fill)
+end
+
+function AlmostBandedMatrix{T}(::UndefInitializer, mn::NTuple{2, Integer},
+        lu::NTuple{2, Integer}, rank::Integer) where {T}
+    return AlmostBandedMatrix(undef, T, mn, lu, rank)
+end
+
+function AlmostBandedMatrix(::UndefInitializer, mn::NTuple{2, Integer},
+        lu::NTuple{2, Integer}, rank::Integer)
+    return AlmostBandedMatrix(undef, Float64, mn, lu, rank)
+end
+
 function AlmostBandedMatrix(bands::BandedMatrix, fill::AbstractMatrix)
     @assert size(fill, 2) == size(bands, 2)
+    @assert size(fill, 1)≥1 "Rank 0 fill array makes it a BandedMatrix."
     T = promote_type(eltype(fill), eltype(bands))
     @assert bandwidths(bands)[1] ≥ size(fill, 1) - 1
-    @assert ArrayInterface.can_setindex(bands)
-    @assert ArrayInterface.fast_scalar_indexing(fill)&&ArrayInterface.fast_scalar_indexing(bands) "Non Fast Scalar Index-able Arrays are not supported currently."
     finish_part_setindex!(bands, fill)
     return AlmostBandedMatrix{T}(bands, fill)
 end
@@ -107,13 +129,27 @@ end
 @inline Base.IndexStyle(::Type{<:AlmostBandedMatrix}) = IndexCartesian()
 
 @inline function colsupport(::AbstractAlmostBandedLayout, A, j)
-    l, _ = almostbandwidths(A)
-    return Base.OneTo(min(maximum(j) + l, size(A, 1)))
+    l, u = almostbandwidths(A)
+    if j ≤ l + u
+        return Base.OneTo(min(maximum(j) + l, size(A, 1)))
+    else
+        r = almostbandedrank(A)
+        sup = colsupport(bandpart(A), j)
+        if isempty(sup)
+            return Base.OneTo(r)
+        else
+            return vcat(Base.OneTo(min(r, minimum(sup) - 1)), sup)
+        end
+    end
 end
 
 @inline function rowsupport(::AbstractAlmostBandedLayout, A, k)
     l, _ = almostbandwidths(A)
-    return max(1, minimum(k) - l):size(A, 2)
+    if k ≤ almostbandedrank(A)
+        return max(1, minimum(k) - l):size(A, 2)
+    else
+        return max(1, minimum(k) - l):min(maximum(k) + l, size(A, 2))
+    end
 end
 
 @inline function Base.getindex(B::AlmostBandedMatrix, k::Integer, j::Integer)
@@ -141,15 +177,68 @@ function Base.setindex!(B::AlmostBandedMatrix, v, k::Integer, j::Integer)
     return
 end
 
+function LinearAlgebra.triu!(A::AlmostBandedMatrix)
+    triu!(bandpart(A))
+    return A
+end
+
+# TODO: Support views properly
 function sublayout(::AlmostBandedLayout,
         ::Type{<:Tuple{AbstractUnitRange{Int}, AbstractUnitRange{Int}}})
     return AlmostBandedLayout()
 end
 
-sub_materialize(::AbstractAlmostBandedLayout, V) = AlmostBandedMatrix(V)
-
 bandpart(V::SubArray) = view(bandpart(parent(V)), parentindices(V)...)
-fillpart(V::SubArray) = view(fillpart(parent(V)), parentindices(V)...)
+function fillpart(V::SubArray)
+    idx1, idx2 = parentindices(V)
+    r = almostbandedrank(parent(V))
+    if maximum(idx1) ≤ r
+        return view(fillpart(parent(V)), idx1, idx2)
+    else
+        start = first(idx1)
+        if start > r
+            return view(fillpart(parent(V)), 0:0, idx2)
+        else
+            return view(fillpart(parent(V)), start:r, idx2)
+        end
+    end
+    error("Not Implemented!")
+end
+
+function almostbandedrank(V::SubArray)
+    idx1, _ = parentindices(V)
+    r = almostbandedrank(parent(V))
+    if maximum(idx1) ≤ r
+        return length(idx1)
+    else
+        return length(first(idx1):r)
+    end
+end
+
+# ---------------
+# Pretty Printing
+# ---------------
+function _almost_banded_summary(io, B::AlmostBandedMatrix{T}, inds) where {T}
+    print(io,
+        Base.dims2string(length.(inds)),
+        " AlmostBandedMatrix{$T} with bandwidths $(almostbandwidths(B)) and fill \
+          rank $(almostbandedrank(B))")
+end
+function Base.array_summary(io::IO, B::AlmostBandedMatrix, inds::Tuple{Vararg{Base.OneTo}})
+    _almost_banded_summary(io, B, inds)
+    print(io, " with data ")
+    summary(io, B.bands)
+    print(io, " and fill ")
+    summary(io, B.fill)
+end
+function Base.array_summary(io::IO, B::AlmostBandedMatrix, inds)
+    _almost_banded_summary(io, B, inds)
+    print(io, " with data ")
+    summary(io, B.bands)
+    print(io, " and fill ")
+    summary(io, B.fill)
+    print(io, " with indices ", Base.inds2string(inds))
+end
 
 # --------------
 # ArrayInterface
@@ -272,10 +361,28 @@ end
 
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML <: AlmostBandedLayout} = Tri{ML}()
 
+@inline function __arguments(x::LazyArray, ::AlmostBandedMatrix, ::Val)
+    return LazyArrays.arguments(x)
+end
+@inline __arguments(x::Mul, ::AlmostBandedMatrix, ::Val) = (x.A, x.B)
+@inline __arguments(x::AbstractArray, ::AlmostBandedMatrix, ::Val{false}) = (nothing, x)
+@inline function __arguments(x::AbstractArray, A::AlmostBandedMatrix, ::Val{true})
+    U = similar(A, size(A, 1), size(x, 1))
+    fill!(U, zero(eltype(A)))
+    fill!(U[diagind(U)], one(eltype(A)))
+    return U, x
+end
+
+@inline __original_almostbandedrank(A) = __original_almostbandedrank(fillpart(A), A)
+@inline function __original_almostbandedrank(L, A)
+    _, V = __arguments(L, A, Val(false))
+    return size(V, 1)
+end
+
 @views function _almostbanded_upper_ldiv!(::Type{Tri}, R::AbstractMatrix,
         b::AbstractVector{T}, buffer) where {T, Tri}
     B, L = bandpart(R), fillpart(R)
-    U, V = L.A, L.B
+    U, V = __arguments(L, R, Val(true))
     fill!(buffer, zero(T))
 
     l, u = bandwidths(B)
@@ -303,7 +410,7 @@ end
 function Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'N', AlmostBandedLayout}})
     R, x = M.A, M.B
     A = triangulardata(R)
-    r = size(A.fill.A, 2)
+    r = __original_almostbandedrank(A)
     _almostbanded_upper_ldiv!(UpperTriangular, A, x, Vector{eltype(M)}(undef, r))
     return x
 end
@@ -311,7 +418,7 @@ end
 function Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'U', AlmostBandedLayout}})
     R, x = M.A, M.B
     A = triangulardata(R)
-    r = size(A.fill.A, 2)
+    r = __original_almostbandedrank(A)
     _almostbanded_upper_ldiv!(UnitUpperTriangular, A, x, Vector{eltype(M)}(undef, r))
     return x
 end
@@ -365,7 +472,7 @@ end
     end
 end
 
-
-export AlmostBandedMatrix, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!
+export AlmostBandedMatrix, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!,
+    almostbandwidths, almostbandedrank
 
 end
