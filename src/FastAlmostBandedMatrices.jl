@@ -127,6 +127,7 @@ end
 @inline Base.size(A::AlmostBandedMatrix) = size(A.bands)
 @inline Base.eltype(::AlmostBandedMatrix{T}) where {T} = T
 @inline Base.IndexStyle(::Type{<:AlmostBandedMatrix}) = IndexCartesian()
+@inline Base.copy(A::AlmostBandedMatrix) = AlmostBandedMatrix(bandpart(A), fillpart(A))
 
 @inline function colsupport(::AbstractAlmostBandedLayout, A, j)
     l, u = almostbandwidths(A)

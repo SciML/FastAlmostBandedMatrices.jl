@@ -15,6 +15,7 @@ using SafeTestsets, Test
 
         @test almostbandwidths(A) == (2, 1)
         @test almostbandedrank(A) == 2
+        @test copy(A) == A
     end
 
     @safetestset "QR" begin
