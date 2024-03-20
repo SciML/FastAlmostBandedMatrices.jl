@@ -9,8 +9,7 @@ end
 
 import ArrayLayouts: MemoryLayout, sublayout, sub_materialize, MatLdivVec, materialize!,
                      triangularlayout, triangulardata, zero!, _copyto!, colsupport,
-                     rowsupport, _qr, _qr!,
-                     _factorize, muladd!
+                     rowsupport, _qr, _qr!, _factorize, muladd!
 import BandedMatrices: _banded_qr!, bandeddata, banded_qr_lmul!
 import LinearAlgebra: ldiv!
 import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPackedQLayout
@@ -68,8 +67,8 @@ function AlmostBandedMatrix{T}(::UndefInitializer, mn::NTuple{2, Integer},
     return AlmostBandedMatrix(undef, T, mn, lu, rank)
 end
 
-function AlmostBandedMatrix(::UndefInitializer, mn::NTuple{2, Integer},
-        lu::NTuple{2, Integer}, rank::Integer)
+function AlmostBandedMatrix(
+        ::UndefInitializer, mn::NTuple{2, Integer}, lu::NTuple{2, Integer}, rank::Integer)
     return AlmostBandedMatrix(undef, Float64, mn, lu, rank)
 end
 
@@ -224,8 +223,7 @@ end
 # Pretty Printing
 # ---------------
 function _almost_banded_summary(io, B::AlmostBandedMatrix{T}, inds) where {T}
-    print(io,
-        Base.dims2string(length.(inds)),
+    print(io, Base.dims2string(length.(inds)),
         " AlmostBandedMatrix{$T} with bandwidths $(almostbandwidths(B)) and fill \
           rank $(almostbandedrank(B))")
 end
@@ -273,8 +271,7 @@ function _almostbanded_qr(_, A)
     # Expand the bandsize for the QR factorization
     ## Bypass the safety checks in `AlmostBandedMatrix`
     return almostbanded_qr!(
-        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)),
-            copy(L)),
+        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), copy(L)),
         Val(true))
 end
 
@@ -327,14 +324,14 @@ end
         L_right = L[:, jr2]
         U′ = U[kr, :]
         for j in 1:length(jr2)
-            muladd!(-one(T), U′[(j + 1):end, :], L_right[:, j], one(T),
-                B_right[(j + 1):end, j])
+            muladd!(
+                -one(T), U′[(j + 1):end, :], L_right[:, j], one(T), B_right[(j + 1):end, j])
         end
         banded_qr_lmul!(Q', B_right)
         banded_qr_lmul!(Q', U′)
         for j in 1:length(jr2)
-            muladd!(one(T), U′[(j + 1):end, :], L_right[:, j], one(T),
-                B_right[(j + 1):end, j])
+            muladd!(
+                one(T), U′[(j + 1):end, :], L_right[:, j], one(T), B_right[(j + 1):end, j])
         end
         k = last(jr1) + 1
     end
@@ -370,8 +367,8 @@ _almostbanded_widerect_ldiv!(::QR{T}, B) where {T} = error("Not implemented")
 
 const UpperLayoutMatrix{T} = UpperTriangular{T, <:LayoutMatrix{T}}
 
-for Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix,
-    :LayoutMatrix)
+for Typ in (
+    :StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix, :LayoutMatrix)
     @eval function ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::$Typ{T}) where {T}
         m, n = size(A)
         if m == n
@@ -417,8 +414,8 @@ end
 
 @inline __original_almostbandedrank(A) = size(first(__lowrankfillpart(A)), 2)
 
-@views function _almostbanded_upper_ldiv!(::Type{Tri}, R::AbstractMatrix,
-        b::AbstractVector{T}, buffer) where {T, Tri}
+@views function _almostbanded_upper_ldiv!(
+        ::Type{Tri}, R::AbstractMatrix, b::AbstractVector{T}, buffer) where {T, Tri}
     B = bandpart(R)
     U, V = __lowrankfillpart(R)
     fill!(buffer, zero(T))
@@ -479,8 +476,8 @@ end
 # Matrix Multiply
 # ---------------
 
-@views function muladd!(α, A::AlmostBandedMatrix, B::AbstractVecOrMat, β,
-        C::AbstractVecOrMat)
+@views function muladd!(
+        α, A::AlmostBandedMatrix, B::AbstractVecOrMat, β, C::AbstractVecOrMat)
     L = fillpart(A)
     muladd!(α, L, B, β, selectdim(C, 1, 1:size(L, 1)))
     muladd!(α, exclusive_bandpart(A), B, β, selectdim(C, 1, (size(L, 1) + 1):size(C, 1)))
