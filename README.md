@@ -2,8 +2,8 @@
 
 [![Join the chat at https://julialang.zulipchat.com #sciml-bridged](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged)
 
-[![CI](https://github.com/avik-pal/FastAlmostBandedMatrices.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/FastAlmostBandedMatrices.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/avik-pal/FastAlmostBandedMatrices.jl/branch/main/graph/badge.svg?)](https://codecov.io/gh/avik-pal/FastAlmostBandedMatrices.jl)
+[![CI](https://github.com/SciML/FastAlmostBandedMatrices.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/SciML/FastAlmostBandedMatrices.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/SciML/FastAlmostBandedMatrices.jl/branch/main/graph/badge.svg?)](https://codecov.io/gh/SciML/FastAlmostBandedMatrices.jl)
 [![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/FastAlmostBandedMatrices)](https://pkgs.genieframework.com?packages=FastAlmostBandedMatrices)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
