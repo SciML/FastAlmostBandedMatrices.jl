@@ -17,6 +17,24 @@ using SafeTestsets, Test
         @test almostbandedrank(A) == 2
     end
 
+    @safetestset "Copy" begin
+        using FastAlmostBandedMatrices
+
+        n = 5
+        m = 2
+
+        A1 = AlmostBandedMatrix(brand(Float64, n, n, m + 1, m), rand(Float64, m, n))
+        A2 = copy(A1)
+
+        @test !(A2 isa Matrix)
+        @test A1 == A2
+
+        A2 = deepcopy(A1)
+
+        @test !(A2 isa Matrix)
+        @test A1 == A2
+    end
+
     @safetestset "QR" begin
         using LinearAlgebra, FastAlmostBandedMatrices
         import MatrixFactorizations: QRPackedQ

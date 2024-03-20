@@ -4,12 +4,13 @@ import PrecompileTools: @recompile_invalidations, @setup_workload, @compile_work
 
 @recompile_invalidations begin
     using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LazyArrays,
-        LinearAlgebra, MatrixFactorizations, Reexport
+          LinearAlgebra, MatrixFactorizations, Reexport
 end
 
 import ArrayLayouts: MemoryLayout, sublayout, sub_materialize, MatLdivVec, materialize!,
-    triangularlayout, triangulardata, zero!, _copyto!, colsupport, rowsupport, _qr, _qr!,
-    _factorize, muladd!
+                     triangularlayout, triangulardata, zero!, _copyto!, colsupport,
+                     rowsupport, _qr, _qr!,
+                     _factorize, muladd!
 import BandedMatrices: _banded_qr!, bandeddata, banded_qr_lmul!
 import LinearAlgebra: ldiv!
 import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPackedQLayout
@@ -160,6 +161,10 @@ end
     end
 end
 
+function Base.copy(B::AlmostBandedMatrix)
+    return AlmostBandedMatrix(copy(bandpart(B)), copy(fillpart(B)))
+end
+
 function Base.setindex!(B::AlmostBandedMatrix, v, k::Integer, j::Integer)
     if k ≤ size(B.fill, 1)
         if j > k + bandwidth(B.bands, 2)
@@ -267,8 +272,10 @@ function _almostbanded_qr(_, A)
     B, L = bandpart(A), fillpart(A)
     # Expand the bandsize for the QR factorization
     ## Bypass the safety checks in `AlmostBandedMatrix`
-    return almostbanded_qr!(AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)),
-            copy(L)), Val(true))
+    return almostbanded_qr!(
+        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)),
+            copy(L)),
+        Val(true))
 end
 
 # Band size not yet expanded!
@@ -504,6 +511,6 @@ end
 end
 
 export AlmostBandedMatrix, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!,
-    almostbandwidths, almostbandedrank
+       almostbandwidths, almostbandedrank
 
 end
