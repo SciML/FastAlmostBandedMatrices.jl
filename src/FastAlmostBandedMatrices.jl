@@ -1,11 +1,9 @@
 module FastAlmostBandedMatrices
 
-import PrecompileTools: @recompile_invalidations, @setup_workload, @compile_workload
+import PrecompileTools: @setup_workload, @compile_workload
 
-@recompile_invalidations begin
-    using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LazyArrays,
-          LinearAlgebra, MatrixFactorizations, Reexport
-end
+using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LazyArrays,
+      LinearAlgebra, MatrixFactorizations, Reexport
 
 import ArrayLayouts: MemoryLayout, sublayout, sub_materialize, MatLdivVec, materialize!,
                      triangularlayout, triangulardata, zero!, _copyto!, colsupport,
