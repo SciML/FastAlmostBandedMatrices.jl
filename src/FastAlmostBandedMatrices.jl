@@ -126,6 +126,14 @@ end
 @inline Base.eltype(::AlmostBandedMatrix{T}) where {T} = T
 @inline Base.IndexStyle(::Type{<:AlmostBandedMatrix}) = IndexCartesian()
 
+# If dims is provided we will construct a Matrix but other invokations should return a
+# AlmostBandedMatrix
+function Base.similar(A::AlmostBandedMatrix, ::Type{T}) where {T}
+    bands = similar(A.bands, T)
+    fill = similar(A.fill, T)
+    return AlmostBandedMatrix{T}(bands, fill)
+end
+
 @inline function colsupport(::AbstractAlmostBandedLayout, A, j)
     l, u = almostbandwidths(A)
     if j ≤ l + u

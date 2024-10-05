@@ -17,6 +17,19 @@ using SafeTestsets, Test
         @test almostbandedrank(A) == 2
     end
 
+    @safetestset "similar" begin
+        using FastAlmostBandedMatrices
+
+        A = AlmostBandedMatrix(brand(Float64, 10, 10, 2, 1), rand(Float64, 2, 10))
+
+        @test similar(A) isa AlmostBandedMatrix
+        @test similar(A, Float32) isa AlmostBandedMatrix{Float32}
+        
+        fallback = similar(A, Float32, 10, 10)
+        @test fallback isa Matrix{Float32}
+        @test size(fallback) == size(A)
+    end
+
     @safetestset "Copy" begin
         using FastAlmostBandedMatrices
 
