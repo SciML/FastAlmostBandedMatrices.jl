@@ -24,7 +24,7 @@ using SafeTestsets, Test
 
         @test similar(A) isa AlmostBandedMatrix
         @test similar(A, Float32) isa AlmostBandedMatrix{Float32}
-        
+
         fallback = similar(A, Float32, 10, 10)
         @test fallback isa Matrix{Float32}
         @test size(fallback) == size(A)
