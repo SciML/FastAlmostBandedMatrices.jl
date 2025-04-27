@@ -1,4 +1,4 @@
-using SafeTestsets, Test, SparseArrays
+using SafeTestsets, Test
 
 @testset "FastAlmostBandedMatrices" begin
     @safetestset "Constructors" begin
@@ -99,6 +99,8 @@ using SafeTestsets, Test, SparseArrays
 
     # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19
     @safetestset "fill! on sparse array with BigFloat" begin
+        using FastAlmostBandedMatrices, SparseArrays
+
         A = sparse([1, 2], [1, 5], big.([1.0, 1.0]))
         A1 = AlmostBandedMatrix(brand(BigFloat, 5, 5, 1, 1), A)
         fill!(A1, BigFloat(0.0))
