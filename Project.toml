@@ -1,7 +1,7 @@
 name = "FastAlmostBandedMatrices"
 uuid = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
 authors = ["Avik Pal"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
