@@ -134,6 +134,12 @@ function Base.similar(A::AlmostBandedMatrix, ::Type{T}) where {T}
     return AlmostBandedMatrix{T}(bands, fill)
 end
 
+function Base.fill!(A::AlmostBandedMatrix, v)
+    fill!(bandpart(A), v)
+    fill!(fillpart(A), v)
+    return nothing
+end
+
 @inline function colsupport(::AbstractAlmostBandedLayout, A, j)
     l, u = almostbandwidths(A)
     if j ≤ l + u
