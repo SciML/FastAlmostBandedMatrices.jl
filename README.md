@@ -180,7 +180,7 @@ finish_part_setindex!
 
 2. Broadcasting won't be fast and will materialize the array into a standard Julia Array.
 
-3. ArrayInferface.jl API
+3. ArrayInterface.jl API
 
     + [x] `fast_scalar_indexing`
     + [x] `qr_instance`
