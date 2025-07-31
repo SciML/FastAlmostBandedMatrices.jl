@@ -65,8 +65,8 @@ function AlmostBandedMatrix{T}(::UndefInitializer, mn::NTuple{2, Integer},
     return AlmostBandedMatrix(undef, T, mn, lu, rank)
 end
 
-function AlmostBandedMatrix(
-        ::UndefInitializer, mn::NTuple{2, Integer}, lu::NTuple{2, Integer}, rank::Integer)
+function AlmostBandedMatrix(::UndefInitializer, mn::NTuple{2, Integer}, lu::NTuple{
+        2, Integer}, rank::Integer)
     return AlmostBandedMatrix(undef, Float64, mn, lu, rank)
 end
 
@@ -88,6 +88,7 @@ end
     # copy `fill` into `bands` in the correct locations
     l, u = bandwidths(bands)
     for i in 1:size(fill, 1), j in max(1, i - l):min(size(bands, 2), i + u)
+
         @inbounds bands[i, j] = fill[i, j]
     end
     return nothing
@@ -199,8 +200,8 @@ function LinearAlgebra.triu!(A::AlmostBandedMatrix)
 end
 
 # TODO: Support views properly
-function sublayout(::AlmostBandedLayout,
-        ::Type{<:Tuple{AbstractUnitRange{Int}, AbstractUnitRange{Int}}})
+function sublayout(::AlmostBandedLayout, ::Type{<:Tuple{
+        AbstractUnitRange{Int}, AbstractUnitRange{Int}}})
     return AlmostBandedLayout()
 end
 
@@ -283,8 +284,7 @@ function _almostbanded_qr(_, A)
     # Expand the bandsize for the QR factorization
     ## Bypass the safety checks in `AlmostBandedMatrix`
     return almostbanded_qr!(
-        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), copy(L)),
-        Val(true))
+        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), copy(L)), Val(true))
 end
 
 # Band size not yet expanded!
@@ -379,8 +379,8 @@ _almostbanded_widerect_ldiv!(::QR{T}, B) where {T} = error("Not implemented")
 
 const UpperLayoutMatrix{T} = UpperTriangular{T, <:LayoutMatrix{T}}
 
-for Typ in (
-    :StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix, :LayoutMatrix)
+for Typ in
+    (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix, :LayoutMatrix)
     @eval function ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::$Typ{T}) where {T}
         m, n = size(A)
         if m == n
