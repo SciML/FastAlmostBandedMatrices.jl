@@ -172,7 +172,7 @@ end
 function Base.fill!(A::AlmostBandedMatrix, v)
     fill!(bandpart(A), v)
     fill!(fillpart(A), v)
-    return nothing
+    return A
 end
 
 @inline function colsupport(::AbstractAlmostBandedLayout, A, j)
