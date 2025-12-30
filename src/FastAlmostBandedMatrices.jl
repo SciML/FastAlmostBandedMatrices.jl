@@ -81,6 +81,17 @@ end
 
 MemoryLayout(::Type{<:AlmostBandedMatrix}) = AlmostBandedLayout()
 
+"""
+    finish_part_setindex!(A::AlmostBandedMatrix)
+    finish_part_setindex!(bands, fill)
+
+Synchronize the overlapping region between the banded part and the fill part of an
+`AlmostBandedMatrix`. This function copies values from the `fill` part into the
+corresponding positions in the `bands` part where they overlap.
+
+This is automatically called during construction but may need to be called manually if
+the fill part is modified directly after construction.
+"""
 @inline function finish_part_setindex!(A)
     return finish_part_setindex!(bandpart(A), fillpart(A))
 end
@@ -97,21 +108,44 @@ end
 """
     bandpart(A::AlmostBandedMatrix)
 
-Banded Part of the AlmostBandedMatrix.
+Return the banded part of the `AlmostBandedMatrix`. This is a `BandedMatrix` that stores
+the banded structure including the overlapping region with the fill part.
+
+# Example
+```julia
+A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+B = bandpart(A)  # Returns the BandedMatrix component
+```
 """
 @inline bandpart(A::AlmostBandedMatrix) = A.bands
 
 """
     fillpart(A::AlmostBandedMatrix)
 
-Fill Part of the AlmostBandedMatrix.
+Return the fill part of the `AlmostBandedMatrix`. This is typically a low-rank matrix that
+represents additional structure beyond the banded part. The fill part overlaps with the
+first `almostbandedrank(A)` rows of the banded part.
+
+# Example
+```julia
+A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+F = fillpart(A)  # Returns the fill matrix (2×10)
+```
 """
 @inline fillpart(A::AlmostBandedMatrix) = A.fill
 
 """
     exclusive_bandpart(A::AlmostBandedMatrix)
 
-Banded Part of the AlmostBandedMatrix without the overlapping part.
+Return the banded part of the `AlmostBandedMatrix` excluding the rows that overlap with
+the fill part. This is a view of the banded matrix starting from row
+`almostbandedrank(A) + 1`.
+
+# Example
+```julia
+A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+E = exclusive_bandpart(A)  # Returns a view of rows 3:10 of the banded part
+```
 """
 @inline function exclusive_bandpart(A)
     B, F = bandpart(A), fillpart(A)
