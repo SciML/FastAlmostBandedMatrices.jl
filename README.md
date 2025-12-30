@@ -20,13 +20,33 @@ repository.
 
 ## High Level Examples
 
+### Basic Construction and Usage
+
 ```julia
-using FastAlmostBandedMatrices
+using FastAlmostBandedMatrices, LinearAlgebra
 
-m = 2
-n = 10
+m = 2  # Fill rank
+n = 10 # Matrix dimension
 
-A1 = AlmostBandedMatrix(brand(Float64, n, n, m + 1, m), rand(Float64, m, n))
+# Create an almost banded matrix
+# brand(T, m, n, lower_bandwidth, upper_bandwidth) creates a random banded matrix
+A = AlmostBandedMatrix(brand(Float64, n, n, m + 1, m), rand(Float64, m, n))
+
+# Query matrix properties
+almostbandwidths(A)  # Returns (3, 2) - the bandwidths of the banded part
+almostbandedrank(A)  # Returns 2 - the rank of the fill part
+
+# Access the parts
+B = bandpart(A)       # Get the banded part
+F = fillpart(A)       # Get the fill part (low-rank correction)
+
+# Solve linear systems efficiently
+b = rand(n)
+x = A \ b  # Uses specialized QR factorization
+
+# QR factorization
+fact = qr(A)
+Q, R = fact.Q, fact.R
 ```
 
 ## Benchmarks
