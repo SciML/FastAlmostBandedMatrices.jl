@@ -15,6 +15,79 @@ import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPa
 @reexport using BandedMatrices
 
 # ------------------
+# DisjointRange - for zero-allocation colsupport
+# ------------------
+
+"""
+    DisjointRange{T}
+
+A lazy representation of the union of two ranges, supporting iteration and indexing
+without heap allocation.
+"""
+struct DisjointRange{T<:Integer, R1<:AbstractUnitRange{T}, R2<:AbstractUnitRange{T}} <:
+       AbstractVector{T}
+    r1::R1
+    r2::R2
+end
+
+Base.size(d::DisjointRange) = (length(d.r1) + length(d.r2),)
+Base.length(d::DisjointRange) = length(d.r1) + length(d.r2)
+
+@inline function Base.getindex(d::DisjointRange, i::Integer)
+    @boundscheck checkbounds(d, i)
+    n1 = length(d.r1)
+    if i <= n1
+        return @inbounds d.r1[i]
+    else
+        return @inbounds d.r2[i - n1]
+    end
+end
+
+Base.IndexStyle(::Type{<:DisjointRange}) = IndexLinear()
+
+@inline function Base.iterate(d::DisjointRange)
+    if !isempty(d.r1)
+        val, state = iterate(d.r1)
+        return val, (1, state)
+    elseif !isempty(d.r2)
+        val, state = iterate(d.r2)
+        return val, (2, state)
+    else
+        return nothing
+    end
+end
+
+@inline function Base.iterate(d::DisjointRange, state)
+    which, inner_state = state
+    if which == 1
+        next = iterate(d.r1, inner_state)
+        if next !== nothing
+            return next[1], (1, next[2])
+        else
+            # Switch to r2
+            if !isempty(d.r2)
+                val, new_state = iterate(d.r2)
+                return val, (2, new_state)
+            else
+                return nothing
+            end
+        end
+    else
+        next = iterate(d.r2, inner_state)
+        if next !== nothing
+            return next[1], (2, next[2])
+        else
+            return nothing
+        end
+    end
+end
+
+Base.first(d::DisjointRange) = isempty(d.r1) ? first(d.r2) : first(d.r1)
+Base.last(d::DisjointRange) = isempty(d.r2) ? last(d.r1) : last(d.r2)
+Base.minimum(d::DisjointRange) = min(minimum(d.r1), minimum(d.r2))
+Base.maximum(d::DisjointRange) = max(maximum(d.r1), maximum(d.r2))
+
+# ------------------
 # AlmostBandedMatrix
 # ------------------
 
@@ -151,7 +224,8 @@ end
         if isempty(sup)
             return Base.OneTo(r)
         else
-            return vcat(Base.OneTo(min(r, minimum(sup) - 1)), sup)
+            # Use DisjointRange to avoid heap allocation from vcat
+            return DisjointRange(Base.OneTo(min(r, minimum(sup) - 1)), sup)
         end
     end
 end
