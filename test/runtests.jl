@@ -107,3 +107,8 @@ using SafeTestsets, Test
         @test length(A1.fill.nzval) == 2
     end
 end
+
+# Allocation tests run separately to avoid precompilation interference
+if get(ENV, "GROUP", "all") == "all" || get(ENV, "GROUP", "all") == "nopre"
+    include("alloc_tests.jl")
+end
