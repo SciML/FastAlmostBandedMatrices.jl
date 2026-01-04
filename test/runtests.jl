@@ -9,7 +9,7 @@ using SafeTestsets, Test
         @test A[1, 1] == 2.0
         A[4, 1] = 0
         @test A[4, 1] == 0.0
-        @test_throws BandError A[4, 1]=2
+        @test_throws BandError A[4, 1] = 2
         A[1, 3] = 5
         @test A[1, 3] == 5.0
 
@@ -84,7 +84,7 @@ using SafeTestsets, Test
         A = AlmostBandedMatrix(BandedMatrix(fill(2.0, n, n), (1, 1)), fill(3.0, 1, n))
         b = randn(n)
         @test MemoryLayout(UpperTriangular(A)) ==
-              TriangularLayout{'U', 'N', AlmostBandedLayout}()
+            TriangularLayout{'U', 'N', AlmostBandedLayout}()
         @test_broken UpperTriangular(Matrix(A)) \ b ≈ UpperTriangular(A) \ b
         @test_broken UnitUpperTriangular(Matrix(A)) \ b ≈ UnitUpperTriangular(A) \ b
         @test LowerTriangular(Matrix(A)) \ b ≈ LowerTriangular(A) \ b
