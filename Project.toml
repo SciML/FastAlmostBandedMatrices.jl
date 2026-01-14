@@ -1,7 +1,7 @@
 name = "FastAlmostBandedMatrices"
 uuid = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
 authors = ["Avik Pal"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -24,4 +24,4 @@ LinearAlgebra = "1"
 MatrixFactorizations = "2, 3"
 PrecompileTools = "1"
 Reexport = "1"
-julia = "1.9"
+julia = "1.10"
