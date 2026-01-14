@@ -241,7 +241,7 @@ end
 @inline Base.eltype(::AlmostBandedMatrix{T}) where {T} = T
 @inline Base.IndexStyle(::Type{<:AlmostBandedMatrix}) = IndexCartesian()
 
-# If dims is provided we will construct a Matrix but other invokations should return a
+# If dims is provided we will construct a Matrix but other invocations should return a
 # AlmostBandedMatrix
 function Base.similar(A::AlmostBandedMatrix, ::Type{T}) where {T}
     bands = similar(A.bands, T)
