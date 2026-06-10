@@ -1,0 +1,12 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+FastAlmostBandedMatrices = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+FastAlmostBandedMatrices = {path = "../.."}
+
+[compat]
+Aqua = "0.8.14"
+Test = "1"
+julia = "1.10"
