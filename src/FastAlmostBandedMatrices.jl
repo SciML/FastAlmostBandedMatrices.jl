@@ -5,12 +5,12 @@ import PrecompileTools: @setup_workload, @compile_workload
 using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LazyArrays,
     LinearAlgebra, MatrixFactorizations, Reexport
 
-import ArrayLayouts: MemoryLayout, sublayout, sub_materialize, MatLdivVec, materialize!,
-    triangularlayout, triangulardata, zero!, _copyto!, colsupport,
-    rowsupport, _qr, _qr!, _factorize, muladd!
-import BandedMatrices: _banded_qr!, bandeddata, banded_qr_lmul!
+import ArrayLayouts: MemoryLayout, sublayout, MatLdivVec, materialize!,
+    triangularlayout, triangulardata, colsupport,
+    rowsupport, _qr, _qr!, _factorize, muladd!, QRPackedQLayout, AdjQRPackedQLayout
+import BandedMatrices: _banded_qr!, banded_qr_lmul!
 import LinearAlgebra: ldiv!
-import MatrixFactorizations: QR, QRPackedQ, getQ, getR, QRPackedQLayout, AdjQRPackedQLayout
+import MatrixFactorizations: QR, QRPackedQ, getQ, getR
 
 @reexport using BandedMatrices
 
