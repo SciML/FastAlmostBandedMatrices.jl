@@ -1,4 +1,6 @@
 [deps]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
+ArrayLayouts = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
 FastAlmostBandedMatrices = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
@@ -8,6 +10,8 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 FastAlmostBandedMatrices = {path = "../.."}
 
 [compat]
+AllocCheck = "0.2.3"
+ArrayLayouts = "1.12.2"
 SafeTestsets = "0.0.1, 0.1"
 SciMLTesting = "1.6"
 Test = "1"
