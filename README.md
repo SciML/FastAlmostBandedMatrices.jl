@@ -177,13 +177,17 @@ b = randn(n)
 
 ## Public API
 
-For documentation of the public API, please use the REPL help mode.
+The public API is documented at
+[docs.sciml.ai/FastAlmostBandedMatrices](https://docs.sciml.ai/FastAlmostBandedMatrices/stable/),
+and each name is documented in the REPL help mode as well.
 
 ```
 AlmostBandedMatrix
 bandpart
 fillpart
 exclusive_bandpart
+almostbandwidths
+almostbandedrank
 finish_part_setindex!
 ```
 
