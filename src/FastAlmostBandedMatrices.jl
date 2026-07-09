@@ -234,7 +234,35 @@ end
 
 @inline almostbandwidths(_, A) = bandwidths(bandpart(A))
 @inline almostbandedrank(_, A) = size(fillpart(A), 1)
+
+"""
+    almostbandwidths(A)
+
+Return the bandwidths `(l, u)` of the banded part of the `AlmostBandedMatrix` `A`, where `l`
+is the number of sub-diagonals and `u` is the number of super-diagonals of
+[`bandpart(A)`](@ref).
+
+# Example
+```julia
+A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+almostbandwidths(A)  # Returns (3, 2)
+```
+"""
 @inline almostbandwidths(A) = almostbandwidths(MemoryLayout(typeof(A)), A)
+
+"""
+    almostbandedrank(A)
+
+Return the rank of the fill part of the `AlmostBandedMatrix` `A`, i.e. the number of rows of
+[`fillpart(A)`](@ref). This is also the number of leading rows of the banded part that
+overlap with the fill part.
+
+# Example
+```julia
+A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+almostbandedrank(A)  # Returns 2
+```
+"""
 @inline almostbandedrank(A) = almostbandedrank(MemoryLayout(typeof(A)), A)
 
 @inline Base.size(A::AlmostBandedMatrix) = size(A.bands)

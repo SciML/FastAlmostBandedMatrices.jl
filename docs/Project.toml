@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+FastAlmostBandedMatrices = "9d29842c-ecb8-4973-b1e9-a27b1157504e"
+
+[compat]
+Documenter = "1"
