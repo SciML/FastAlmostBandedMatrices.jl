@@ -1,10 +1,20 @@
-using SciMLTesting, FastAlmostBandedMatrices, Test
+using SciMLTesting, FastAlmostBandedMatrices
 
-include("public_api_docs.jl")
+const REEXPORTED_API = (
+    :Band, :BandError, :BandRange, :BandedMatrices, :BandedMatrix,
+    :Eye, :Fill, :Ones, :Zeros,
+    :band, :bandrange, :bandwidth, :bandwidths, :brand, :brandn,
+    :colrange, :rowrange, :symrcm,
+)
 
 run_qa(
     FastAlmostBandedMatrices;
     explicit_imports = true,
+    api_docs_kwargs = (;
+        rendered = true,
+        ignore = REEXPORTED_API,
+        rendered_ignore = REEXPORTED_API,
+    ),
     # 19 method ambiguities, all in FastAlmostBandedMatrices' own ldiv!/__arguments
     # against ArrayLayouts/LinearAlgebra Triangular/Factorization methods.
     # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71
