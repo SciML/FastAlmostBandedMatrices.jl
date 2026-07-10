@@ -1,5 +1,7 @@
 using SciMLTesting, FastAlmostBandedMatrices, Test
 
+include("public_api_docs.jl")
+
 run_qa(
     FastAlmostBandedMatrices;
     explicit_imports = true,

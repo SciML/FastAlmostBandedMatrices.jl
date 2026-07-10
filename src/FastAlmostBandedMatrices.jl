@@ -232,9 +232,6 @@ E = exclusive_bandpart(A)  # Returns a view of rows 3:10 of the banded part
     return @view(B[(size(F, 1) + 1):end, :])
 end
 
-@inline almostbandwidths(_, A) = bandwidths(bandpart(A))
-@inline almostbandedrank(_, A) = size(fillpart(A), 1)
-
 """
     almostbandwidths(A)
 
@@ -248,6 +245,9 @@ A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 almostbandwidths(A)  # Returns (3, 2)
 ```
 """
+@inline function almostbandwidths(_, A)
+    return bandwidths(bandpart(A))
+end
 @inline almostbandwidths(A) = almostbandwidths(MemoryLayout(typeof(A)), A)
 
 """
@@ -263,6 +263,9 @@ A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 almostbandedrank(A)  # Returns 2
 ```
 """
+@inline function almostbandedrank(_, A)
+    return size(fillpart(A), 1)
+end
 @inline almostbandedrank(A) = almostbandedrank(MemoryLayout(typeof(A)), A)
 
 @inline Base.size(A::AlmostBandedMatrix) = size(A.bands)
