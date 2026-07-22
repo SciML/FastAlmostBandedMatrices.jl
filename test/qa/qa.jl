@@ -9,12 +9,7 @@ const REEXPORTED_API = (
 
 run_qa(
     FastAlmostBandedMatrices;
-    explicit_imports = true,
-    api_docs_kwargs = (;
-        rendered = true,
-        ignore = REEXPORTED_API,
-        rendered_ignore = REEXPORTED_API,
-    ),
+    reexports_allow = REEXPORTED_API,
     # 19 method ambiguities, all in FastAlmostBandedMatrices' own ldiv!/__arguments
     # against ArrayLayouts/LinearAlgebra Triangular/Factorization methods.
     # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71

@@ -106,6 +106,27 @@ An `AlmostBandedMatrix` is a matrix with a `bands` part and a `fill` part. For e
 operations we store the matrix as a BandedMatrix and another AbstractMatrix with an
 overlapping bit.
 
+# Arguments
+
+- `bands::BandedMatrix`: The banded component. Its lower bandwidth must be at least
+  `size(fill, 1) - 1` so it can store the overlap with the fill component.
+- `fill::AbstractMatrix`: The dense or lazy low-rank component. It must have the same number
+  of columns as `bands` and at least one row.
+- `mn::NTuple{2, Integer}`: Matrix dimensions for an `undef` construction.
+- `lu::NTuple{2, Integer}`: Lower and upper bandwidths for an `undef` construction.
+- `rank::Integer`: Number of rows in the fill component for an `undef` construction. It must
+  be positive and no greater than `lu[2] + 1`.
+
+# Notes
+
+Construction synchronizes the overlapping entries by copying the fill component into the
+banded component. Mutating the fill component directly afterwards requires
+[`finish_part_setindex!`](@ref) before operations that read the overlap from the banded
+component.
+
+# Representation
+
+```text
 [3 3 3 2 2 2 2 ... 2 2 2]\\
 [3 3 3 3 2 2 2 ... 2 2 2]\\
 [0 1 1 1 1 0 0 ... 0 0 0]\\
@@ -115,9 +136,18 @@ overlapping bit.
 [.......................]\\
 [0 0 0 0 0 0 0 ... 1 1 0]\\
 [0 0 0 0 0 0 0 ... 1 1 1]
+```
 
 where `2`'s are the fill part, and `1`'s are the bands part, and `3`'s are the overlapping
 part.
+
+# Example
+
+```julia
+bands = brand(Float64, 8, 8, 3, 2)
+fill = rand(2, 8)
+A = AlmostBandedMatrix(bands, fill)
+```
 """
 @concrete struct AlmostBandedMatrix{T} <: LayoutMatrix{T}
     bands
@@ -171,6 +201,27 @@ corresponding positions in the `bands` part where they overlap.
 
 This is automatically called during construction but may need to be called manually if
 the fill part is modified directly after construction.
+
+# Arguments
+
+- `A::AlmostBandedMatrix`: Matrix whose banded component is synchronized with its fill
+  component.
+- `bands`: Banded component to mutate when calling the two-argument form.
+- `fill`: Fill component whose overlapping entries are copied into `bands` when calling the
+  two-argument form.
+
+# Returns
+
+Returns `nothing`. The `bands` argument, or equivalently `bandpart(A)`, is mutated; `fill` is
+not mutated.
+
+# Example
+
+```julia
+A = AlmostBandedMatrix(brand(Float64, 8, 8, 3, 2), rand(2, 8))
+fillpart(A)[1, 1] = 1
+finish_part_setindex!(A)
+```
 """
 @inline function finish_part_setindex!(A)
     return finish_part_setindex!(bandpart(A), fillpart(A))
@@ -191,6 +242,14 @@ end
 Return the banded part of the `AlmostBandedMatrix`. This is a `BandedMatrix` that stores
 the banded structure including the overlapping region with the fill part.
 
+# Arguments
+
+- `A::AlmostBandedMatrix`: Matrix whose banded storage is requested.
+
+# Returns
+
+Returns the mutable `BandedMatrix` stored by `A`; it is not a copy.
+
 # Example
 ```julia
 A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
@@ -206,6 +265,15 @@ Return the fill part of the `AlmostBandedMatrix`. This is typically a low-rank m
 represents additional structure beyond the banded part. The fill part overlaps with the
 first `almostbandedrank(A)` rows of the banded part.
 
+# Arguments
+
+- `A::AlmostBandedMatrix`: Matrix whose fill storage is requested.
+
+# Returns
+
+Returns the mutable fill matrix stored by `A`; it is not a copy. Call
+[`finish_part_setindex!`](@ref) after directly modifying entries in the overlap.
+
 # Example
 ```julia
 A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
@@ -220,6 +288,14 @@ F = fillpart(A)  # Returns the fill matrix (2×10)
 Return the banded part of the `AlmostBandedMatrix` excluding the rows that overlap with
 the fill part. This is a view of the banded matrix starting from row
 `almostbandedrank(A) + 1`.
+
+# Arguments
+
+- `A::AlmostBandedMatrix`: Matrix whose non-overlapping banded rows are requested.
+
+# Returns
+
+Returns a view into `bandpart(A)`, not a copy.
 
 # Example
 ```julia
@@ -239,6 +315,14 @@ Return the bandwidths `(l, u)` of the banded part of the `AlmostBandedMatrix` `A
 is the number of sub-diagonals and `u` is the number of super-diagonals of
 [`bandpart(A)`](@ref).
 
+# Arguments
+
+- `A::AlmostBandedMatrix`: Matrix to query.
+
+# Returns
+
+Returns `(l, u)`, where `l` is the lower bandwidth and `u` is the upper bandwidth.
+
 # Example
 ```julia
 A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
@@ -256,6 +340,14 @@ end
 Return the rank of the fill part of the `AlmostBandedMatrix` `A`, i.e. the number of rows of
 [`fillpart(A)`](@ref). This is also the number of leading rows of the banded part that
 overlap with the fill part.
+
+# Arguments
+
+- `A::AlmostBandedMatrix`: Matrix to query.
+
+# Returns
+
+Returns the number of rows in `fillpart(A)`.
 
 # Example
 ```julia
