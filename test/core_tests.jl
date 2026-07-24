@@ -58,8 +58,8 @@ end
     B, L = bandpart(A), fillpart(A)
 
     F = qr(A)
-    @test F.Q isa LinearAlgebra.QRPackedQ{Float64, <:BandedMatrix}
-    @test F.R isa UpperTriangular{Float64, <:SubArray{Float64, 2, <:AlmostBandedMatrix}}
+    @test F.Q isa LinearAlgebra.QRPackedQ{Float64,<:BandedMatrix}
+    @test F.R isa UpperTriangular{Float64,<:SubArray{Float64,2,<:AlmostBandedMatrix}}
     @test F.Q' * A ≈ F.R
     @test A == Ã
 
@@ -82,8 +82,7 @@ end
     n = 80
     A = AlmostBandedMatrix(BandedMatrix(fill(2.0, n, n), (1, 1)), fill(3.0, 1, n))
     b = randn(n)
-    @test MemoryLayout(UpperTriangular(A)) ==
-        TriangularLayout{'U', 'N', AlmostBandedLayout}()
+    @test MemoryLayout(UpperTriangular(A)) == TriangularLayout{'U','N',AlmostBandedLayout}()
     @test_broken UpperTriangular(Matrix(A)) \ b ≈ UpperTriangular(A) \ b
     @test_broken UnitUpperTriangular(Matrix(A)) \ b ≈ UnitUpperTriangular(A) \ b
     @test LowerTriangular(Matrix(A)) \ b ≈ LowerTriangular(A) \ b
