@@ -9,15 +9,9 @@ makedocs(;
     linkcheck = false,
     checkdocs = :exports,
     format = Documenter.HTML(;
-        canonical = "https://docs.sciml.ai/FastAlmostBandedMatrices/stable/"
+        canonical = "https://docs.sciml.ai/FastAlmostBandedMatrices/stable/",
     ),
-    pages = [
-        "Home" => "index.md",
-        "API" => "api.md",
-    ]
+    pages = ["Home" => "index.md", "API" => "api.md"],
 )
 
-deploydocs(;
-    repo = "github.com/SciML/FastAlmostBandedMatrices.jl.git",
-    push_preview = true
-)
+deploydocs(; repo = "github.com/SciML/FastAlmostBandedMatrices.jl.git", push_preview = true)

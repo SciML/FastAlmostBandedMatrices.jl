@@ -1,10 +1,24 @@
 using SciMLTesting, FastAlmostBandedMatrices
 
 const REEXPORTED_API = (
-    :Band, :BandError, :BandRange, :BandedMatrices, :BandedMatrix,
-    :Eye, :Fill, :Ones, :Zeros,
-    :band, :bandrange, :bandwidth, :bandwidths, :brand, :brandn,
-    :colrange, :rowrange, :symrcm,
+    :Band,
+    :BandError,
+    :BandRange,
+    :BandedMatrices,
+    :BandedMatrix,
+    :Eye,
+    :Fill,
+    :Ones,
+    :Zeros,
+    :band,
+    :bandrange,
+    :bandwidth,
+    :bandwidths,
+    :brand,
+    :brandn,
+    :colrange,
+    :rowrange,
+    :symrcm,
 )
 
 run_qa(
@@ -21,10 +35,21 @@ run_qa(
         #   QR/QRPackedQ/getQ/getR, BandedMatrices _banded_qr!/banded_qr_lmul!.
         all_explicit_imports_are_public = (;
             ignore = (
-                :MatLdivVec, :sublayout, :triangulardata, :triangularlayout,
-                :_qr, :_qr!, :_factorize, :QRPackedQLayout, :AdjQRPackedQLayout,
-                :QR, :QRPackedQ, :getQ, :getR,
-                :_banded_qr!, :banded_qr_lmul!,
+                :MatLdivVec,
+                :sublayout,
+                :triangulardata,
+                :triangularlayout,
+                :_qr,
+                :_qr!,
+                :_factorize,
+                :QRPackedQLayout,
+                :AdjQRPackedQLayout,
+                :QR,
+                :QRPackedQ,
+                :getQ,
+                :getR,
+                :_banded_qr!,
+                :banded_qr_lmul!,
             ),
         ),
         # Qualified accesses of non-public names: Base OneTo/array_summary/dims2string/
@@ -32,8 +57,15 @@ run_qa(
         #   ArrayInterface fast_scalar_indexing/qr_instance.
         all_qualified_accesses_are_public = (;
             ignore = (
-                :OneTo, :array_summary, :dims2string, :inds2string, :materialize!,
-                :QRPackedQ, :arguments, :fast_scalar_indexing, :qr_instance,
+                :OneTo,
+                :array_summary,
+                :dims2string,
+                :inds2string,
+                :materialize!,
+                :QRPackedQ,
+                :arguments,
+                :fast_scalar_indexing,
+                :qr_instance,
             ),
         ),
     ),
