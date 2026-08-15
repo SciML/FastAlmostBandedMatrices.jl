@@ -1,15 +1,7 @@
 using SciMLTesting, FastAlmostBandedMatrices
 
-const REEXPORTED_API = (
-    :Band, :BandError, :BandRange, :BandedMatrices, :BandedMatrix,
-    :Eye, :Fill, :Ones, :Zeros,
-    :band, :bandrange, :bandwidth, :bandwidths, :brand, :brandn,
-    :colrange, :rowrange, :symrcm,
-)
-
 run_qa(
     FastAlmostBandedMatrices;
-    reexports_allow = REEXPORTED_API,
     # 19 method ambiguities, all in FastAlmostBandedMatrices' own ldiv!/__arguments
     # against ArrayLayouts/LinearAlgebra Triangular/Factorization methods.
     # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71
@@ -38,8 +30,8 @@ run_qa(
         ),
     ),
     # 31 names implicitly imported via the package's `using ArrayInterface, ArrayLayouts,
-    # BandedMatrices, ConcreteStructs, LazyArrays, LinearAlgebra, ...` plus
-    # `@reexport using BandedMatrices`; explicit-import conversion tracked separately.
+    # BandedMatrices, ConcreteStructs, LazyArrays, LinearAlgebra, ...`; explicit-import
+    # conversion tracked separately.
     # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71
     ei_broken = (:no_implicit_imports,),
 )

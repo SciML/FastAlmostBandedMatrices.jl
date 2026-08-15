@@ -22,7 +22,7 @@ Pkg.add("FastAlmostBandedMatrices")
 ## Basic Construction and Usage
 
 ```julia
-using FastAlmostBandedMatrices, LinearAlgebra
+using BandedMatrices, FastAlmostBandedMatrices, LinearAlgebra
 
 m = 2  # Fill rank
 n = 10 # Matrix dimension
