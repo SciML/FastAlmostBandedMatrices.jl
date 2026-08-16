@@ -3,6 +3,10 @@ using SafeTestsets
 @safetestset "Documented construction API" begin
     using FastAlmostBandedMatrices
 
+    exported = Set(names(FastAlmostBandedMatrices; all = false))
+    @test (:BandedMatrix in exported) && (:brand in exported)
+    @test all(name ∉ exported for name in (:Band, :Fill, :band, :bandwidth, :brandn))
+
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
     bands = BandedMatrix(fill(1.0, 10, 10), (3, 2))
     B = AlmostBandedMatrix(bands, rand(Float64, 2, 10))
