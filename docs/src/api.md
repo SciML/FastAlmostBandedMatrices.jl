@@ -8,6 +8,12 @@ The following names make up the public API of FastAlmostBandedMatrices.jl.
 AlmostBandedMatrix
 ```
 
+## Banded Construction Helpers
+
+`FastAlmostBandedMatrices` reexports the `BandedMatrices` constructor helpers needed by the
+documented construction examples: `BandedMatrix` for explicit banded storage and `brand`
+for random banded test matrices.
+
 ## Accessing the Parts
 
 ```@docs

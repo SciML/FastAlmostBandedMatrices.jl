@@ -23,7 +23,7 @@ repository.
 ### Basic Construction and Usage
 
 ```julia
-using BandedMatrices, FastAlmostBandedMatrices, LinearAlgebra
+using FastAlmostBandedMatrices, LinearAlgebra
 
 m = 2  # Fill rank
 n = 10 # Matrix dimension
@@ -58,7 +58,7 @@ Q, R = fact.Q, fact.R
 <p>
 
 ```julia
-using BandedMatrices, BenchmarkTools, FastAlmostBandedMatrices, SparseArrays, FillArrays, LinearAlgebra
+using BenchmarkTools, FastAlmostBandedMatrices, SparseArrays, FillArrays, LinearAlgebra
 import SemiseparableMatrices
 
 m = 5

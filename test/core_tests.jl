@@ -1,5 +1,16 @@
 using SafeTestsets
 
+@safetestset "Documented construction API" begin
+    using FastAlmostBandedMatrices
+
+    A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+
+    @test A isa AlmostBandedMatrix
+    @test bandpart(A) isa BandedMatrix
+    @test almostbandwidths(A) == (3, 2)
+    @test almostbandedrank(A) == 2
+end
+
 @safetestset "Constructors" begin
     using BandedMatrices, FastAlmostBandedMatrices
 
