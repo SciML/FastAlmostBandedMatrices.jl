@@ -4,11 +4,14 @@ using SafeTestsets
     using FastAlmostBandedMatrices
 
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+    bands = BandedMatrix(fill(1.0, 10, 10), (3, 2))
+    B = AlmostBandedMatrix(bands, rand(Float64, 2, 10))
 
     @test A isa AlmostBandedMatrix
     @test bandpart(A) isa BandedMatrix
     @test almostbandwidths(A) == (3, 2)
     @test almostbandedrank(A) == 2
+    @test B isa AlmostBandedMatrix
 end
 
 @safetestset "Constructors" begin

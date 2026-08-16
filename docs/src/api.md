@@ -10,9 +10,14 @@ AlmostBandedMatrix
 
 ## Banded Construction Helpers
 
-`FastAlmostBandedMatrices` reexports the `BandedMatrices` constructor helpers needed by the
-documented construction examples: `BandedMatrix` for explicit banded storage and `brand`
-for random banded test matrices.
+`BandedMatrix` and `brand` are reexported because they are the public constructors used by
+the documented `AlmostBandedMatrix` construction workflow. Other banded-matrix utilities
+should be imported from `BandedMatrices` directly.
+
+```@docs
+BandedMatrix
+brand
+```
 
 ## Accessing the Parts
 

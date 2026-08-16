@@ -4,7 +4,61 @@ import PrecompileTools: @setup_workload, @compile_workload
 
 using ArrayInterface, ArrayLayouts, ConcreteStructs, LazyArrays, LinearAlgebra,
     MatrixFactorizations
-using BandedMatrices: BandedMatrix, bandwidth, bandwidths, brand
+import BandedMatrices
+using BandedMatrices: bandwidth, bandwidths
+
+"""
+    BandedMatrix(A::AbstractMatrix, bandwidths::NTuple{2, Integer})
+
+Construct a banded matrix from an array and its lower and upper bandwidths. This is the
+banded storage type accepted by [`AlmostBandedMatrix`](@ref) and is reexported here because
+it is part of the documented construction workflow.
+
+# Arguments
+
+- `A::AbstractMatrix`: Values used to initialize the banded matrix.
+- `bandwidths::NTuple{2, Integer}`: Lower and upper bandwidths `(l, u)`.
+
+# Returns
+
+Returns a `BandedMatrix` with the requested bandwidths.
+
+# Example
+
+```julia
+bands = BandedMatrix(fill(0.0, 8, 8), (3, 2))
+A = AlmostBandedMatrix(bands, rand(2, 8))
+```
+"""
+const BandedMatrix = BandedMatrices.BandedMatrix
+
+"""
+    brand(T, n, m, l, u)
+
+Construct a random `n`-by-`m` banded matrix with element type `T` and lower and upper
+bandwidths `l` and `u`. This constructor is reexported because it is used by the documented
+`AlmostBandedMatrix` examples.
+
+# Arguments
+
+- `T`: Element type of the generated matrix.
+- `n::Integer`: Number of rows.
+- `m::Integer`: Number of columns.
+- `l::Integer`: Number of subdiagonals.
+- `u::Integer`: Number of superdiagonals.
+
+# Returns
+
+Returns a `BandedMatrix{T}` whose entries inside the bandwidths are random.
+
+# Example
+
+```julia
+bands = brand(Float64, 8, 8, 3, 2)
+A = AlmostBandedMatrix(bands, rand(2, 8))
+```
+"""
+const brand = BandedMatrices.brand
 
 import ArrayLayouts: MemoryLayout, sublayout, MatLdivVec, materialize!,
     triangularlayout, triangulardata, colsupport,
