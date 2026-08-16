@@ -1,6 +1,6 @@
 using SciMLTesting, FastAlmostBandedMatrices
 
-const REEXPORTED_API = (:BandedMatrix, :brand)
+const REEXPORTED_API = (:brand,)
 
 run_qa(
     FastAlmostBandedMatrices;

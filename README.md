@@ -183,6 +183,7 @@ and each name is documented in the REPL help mode as well.
 
 ```
 AlmostBandedMatrix
+brand
 bandpart
 fillpart
 exclusive_bandpart

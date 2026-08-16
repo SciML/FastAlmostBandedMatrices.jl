@@ -8,14 +8,13 @@ The following names make up the public API of FastAlmostBandedMatrices.jl.
 AlmostBandedMatrix
 ```
 
-## Banded Construction Helpers
+## Banded Construction Helper
 
-`BandedMatrix` and `brand` are reexported because they are the public constructors used by
-the documented `AlmostBandedMatrix` construction workflow. Other banded-matrix utilities
-should be imported from `BandedMatrices` directly.
+`brand` is reexported because it is used by the documented `AlmostBandedMatrix` construction
+workflow. Other banded-matrix types and utilities should be imported from `BandedMatrices`
+directly.
 
 ```@docs
-BandedMatrix
 brand
 ```
 

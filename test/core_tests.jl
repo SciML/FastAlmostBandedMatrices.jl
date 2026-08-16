@@ -1,18 +1,18 @@
 using SafeTestsets
 
 @safetestset "Documented construction API" begin
-    using FastAlmostBandedMatrices
+    using BandedMatrices, FastAlmostBandedMatrices
 
     exported = Set(names(FastAlmostBandedMatrices; all = false))
-    @test (:BandedMatrix in exported) && (:brand in exported)
-    @test all(name ∉ exported for name in (:Band, :Fill, :band, :bandwidth, :brandn))
+    @test :brand in exported
+    @test all(name ∉ exported for name in (:Band, :BandedMatrix, :Fill, :band, :bandwidth, :brandn))
 
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
-    bands = BandedMatrix(fill(1.0, 10, 10), (3, 2))
+    bands = BandedMatrices.BandedMatrix(fill(1.0, 10, 10), (3, 2))
     B = AlmostBandedMatrix(bands, rand(Float64, 2, 10))
 
     @test A isa AlmostBandedMatrix
-    @test bandpart(A) isa BandedMatrix
+    @test bandpart(A) isa BandedMatrices.BandedMatrix
     @test almostbandwidths(A) == (3, 2)
     @test almostbandedrank(A) == 2
     @test B isa AlmostBandedMatrix

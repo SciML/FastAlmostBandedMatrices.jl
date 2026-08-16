@@ -8,31 +8,6 @@ import BandedMatrices
 using BandedMatrices: bandwidth, bandwidths
 
 """
-    BandedMatrix(A::AbstractMatrix, bandwidths::NTuple{2, Integer})
-
-Construct a banded matrix from an array and its lower and upper bandwidths. This is the
-banded storage type accepted by [`AlmostBandedMatrix`](@ref) and is reexported here because
-it is part of the documented construction workflow.
-
-# Arguments
-
-- `A::AbstractMatrix`: Values used to initialize the banded matrix.
-- `bandwidths::NTuple{2, Integer}`: Lower and upper bandwidths `(l, u)`.
-
-# Returns
-
-Returns a `BandedMatrix` with the requested bandwidths.
-
-# Example
-
-```julia
-bands = BandedMatrix(fill(0.0, 8, 8), (3, 2))
-A = AlmostBandedMatrix(bands, rand(2, 8))
-```
-"""
-const BandedMatrix = BandedMatrices.BandedMatrix
-
-"""
     brand(T, n, m, l, u)
 
 Construct a random `n`-by-`m` banded matrix with element type `T` and lower and upper
@@ -49,7 +24,7 @@ bandwidths `l` and `u`. This constructor is reexported because it is used by the
 
 # Returns
 
-Returns a `BandedMatrix{T}` whose entries inside the bandwidths are random.
+Returns a `BandedMatrices.BandedMatrix{T}` whose entries inside the bandwidths are random.
 
 # Example
 
@@ -148,7 +123,7 @@ abstract type AbstractAlmostBandedLayout <: MemoryLayout end
 struct AlmostBandedLayout <: AbstractAlmostBandedLayout end
 
 """
-    AlmostBandedMatrix(bands::BandedMatrix, fill)
+    AlmostBandedMatrix(bands::BandedMatrices.BandedMatrix, fill)
     AlmostBandedMatrix{T}(bands, fill)
     AlmostBandedMatrix(::UndefInitializer, [::Type{T} = Float64], mn::NTuple{2, Integer},
         lu::NTuple{2, Integer}, rank::Integer)
@@ -223,7 +198,7 @@ function AlmostBandedMatrix(
     ) where {T}
     @assert lu[2] ≥ rank - 1
     @assert rank ≥ 1 "Rank 0 fill array makes it a BandedMatrix."
-    bands = BandedMatrix{T}(undef, mn, lu)
+    bands = BandedMatrices.BandedMatrix{T}(undef, mn, lu)
     fill = Matrix{T}(undef, rank, mn[2])
     return AlmostBandedMatrix{T}(bands, fill)
 end
@@ -243,7 +218,7 @@ function AlmostBandedMatrix(
     return AlmostBandedMatrix(undef, Float64, mn, lu, rank)
 end
 
-function AlmostBandedMatrix(bands::BandedMatrix, fill::AbstractMatrix)
+function AlmostBandedMatrix(bands::BandedMatrices.BandedMatrix, fill::AbstractMatrix)
     @assert size(fill, 2) == size(bands, 2)
     @assert size(fill, 1) ≥ 1 "Rank 0 fill array makes it a BandedMatrix."
     T = promote_type(eltype(fill), eltype(bands))
@@ -592,7 +567,9 @@ function _almostbanded_qr(_, A)
     # Expand the bandsize for the QR factorization
     ## Bypass the safety checks in `AlmostBandedMatrix`
     return almostbanded_qr!(
-        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), copy(L)), Val(true)
+        AlmostBandedMatrix{eltype(A)}(
+            BandedMatrices.BandedMatrix(copy(B), (l, l + u)), copy(L)
+        ), Val(true)
     )
 end
 
@@ -600,7 +577,7 @@ end
 function almostbanded_qr!(R::AbstractMatrix{T}, ::Val{false}) where {T}
     l, u = almostbandwidths(R)
     B, L = bandpart(R), fillpart(R)
-    R′ = AlmostBandedMatrix{eltype(R)}(BandedMatrix(B, (l, l + u)), L)
+    R′ = AlmostBandedMatrix{eltype(R)}(BandedMatrices.BandedMatrix(B, (l, l + u)), L)
     return almostbanded_qr!(R′, Val(true))
 end
 
@@ -832,7 +809,7 @@ end
     end
 end
 
-export AlmostBandedMatrix, BandedMatrix, brand, bandpart, fillpart, exclusive_bandpart,
-    finish_part_setindex!, almostbandwidths, almostbandedrank
+export AlmostBandedMatrix, brand, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!,
+    almostbandwidths, almostbandedrank
 
 end
