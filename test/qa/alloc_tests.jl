@@ -1,4 +1,5 @@
 using AllocCheck
+using BandedMatrices
 using FastAlmostBandedMatrices
 using FastAlmostBandedMatrices: DisjointRange
 using ArrayLayouts: colsupport, rowsupport

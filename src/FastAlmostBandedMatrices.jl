@@ -2,8 +2,10 @@ module FastAlmostBandedMatrices
 
 import PrecompileTools: @setup_workload, @compile_workload
 
-using ArrayInterface, ArrayLayouts, BandedMatrices, ConcreteStructs, LazyArrays,
-    LinearAlgebra, MatrixFactorizations, Reexport
+using ArrayInterface, ArrayLayouts, ConcreteStructs, LazyArrays, LinearAlgebra,
+    MatrixFactorizations
+import BandedMatrices
+using BandedMatrices: bandwidth, bandwidths
 
 import ArrayLayouts: MemoryLayout, sublayout, MatLdivVec, materialize!,
     triangularlayout, triangulardata, colsupport,
@@ -11,8 +13,6 @@ import ArrayLayouts: MemoryLayout, sublayout, MatLdivVec, materialize!,
 import BandedMatrices: _banded_qr!, banded_qr_lmul!
 import LinearAlgebra: ldiv!
 import MatrixFactorizations: QR, QRPackedQ, getQ, getR
-
-@reexport using BandedMatrices
 
 # ------------------
 # DisjointRange - for zero-allocation colsupport
@@ -95,7 +95,7 @@ abstract type AbstractAlmostBandedLayout <: MemoryLayout end
 struct AlmostBandedLayout <: AbstractAlmostBandedLayout end
 
 """
-    AlmostBandedMatrix(bands::BandedMatrix, fill)
+    AlmostBandedMatrix(bands::BandedMatrices.BandedMatrix, fill)
     AlmostBandedMatrix{T}(bands, fill)
     AlmostBandedMatrix(::UndefInitializer, [::Type{T} = Float64], mn::NTuple{2, Integer},
         lu::NTuple{2, Integer}, rank::Integer)
@@ -116,6 +116,11 @@ overlapping bit.
 - `lu::NTuple{2, Integer}`: Lower and upper bandwidths for an `undef` construction.
 - `rank::Integer`: Number of rows in the fill component for an `undef` construction. It must
   be positive and no greater than `lu[2] + 1`.
+
+# Fields
+
+- `bands`: Banded storage, including the part that overlaps with `fill`.
+- `fill`: Dense or lazy low-rank storage for the leading rows.
 
 # Notes
 
@@ -144,10 +149,15 @@ part.
 # Example
 
 ```julia
-bands = brand(Float64, 8, 8, 3, 2)
+bands = BandedMatrices.brand(Float64, 8, 8, 3, 2)
 fill = rand(2, 8)
 A = AlmostBandedMatrix(bands, fill)
 ```
+
+# Errors
+
+Throws `AssertionError` if `fill` has no rows, if `bands` and `fill` have different numbers
+of columns, or if the lower bandwidth of `bands` is too small for the fill rank.
 """
 @concrete struct AlmostBandedMatrix{T} <: LayoutMatrix{T}
     bands
@@ -160,7 +170,7 @@ function AlmostBandedMatrix(
     ) where {T}
     @assert lu[2] ≥ rank - 1
     @assert rank ≥ 1 "Rank 0 fill array makes it a BandedMatrix."
-    bands = BandedMatrix{T}(undef, mn, lu)
+    bands = BandedMatrices.BandedMatrix{T}(undef, mn, lu)
     fill = Matrix{T}(undef, rank, mn[2])
     return AlmostBandedMatrix{T}(bands, fill)
 end
@@ -180,7 +190,7 @@ function AlmostBandedMatrix(
     return AlmostBandedMatrix(undef, Float64, mn, lu, rank)
 end
 
-function AlmostBandedMatrix(bands::BandedMatrix, fill::AbstractMatrix)
+function AlmostBandedMatrix(bands::BandedMatrices.BandedMatrix, fill::AbstractMatrix)
     @assert size(fill, 2) == size(bands, 2)
     @assert size(fill, 1) ≥ 1 "Rank 0 fill array makes it a BandedMatrix."
     T = promote_type(eltype(fill), eltype(bands))
@@ -218,7 +228,7 @@ not mutated.
 # Example
 
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 8, 8, 3, 2), rand(2, 8))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 8, 8, 3, 2), rand(2, 8))
 fillpart(A)[1, 1] = 1
 finish_part_setindex!(A)
 ```
@@ -252,7 +262,7 @@ Returns the mutable `BandedMatrix` stored by `A`; it is not a copy.
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 B = bandpart(A)  # Returns the BandedMatrix component
 ```
 """
@@ -276,7 +286,7 @@ Returns the mutable fill matrix stored by `A`; it is not a copy. Call
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 F = fillpart(A)  # Returns the fill matrix (2×10)
 ```
 """
@@ -299,7 +309,7 @@ Returns a view into `bandpart(A)`, not a copy.
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 E = exclusive_bandpart(A)  # Returns a view of rows 3:10 of the banded part
 ```
 """
@@ -325,7 +335,7 @@ Returns `(l, u)`, where `l` is the lower bandwidth and `u` is the upper bandwidt
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 almostbandwidths(A)  # Returns (3, 2)
 ```
 """
@@ -351,7 +361,7 @@ Returns the number of rows in `fillpart(A)`.
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 almostbandedrank(A)  # Returns 2
 ```
 """
@@ -529,7 +539,9 @@ function _almostbanded_qr(_, A)
     # Expand the bandsize for the QR factorization
     ## Bypass the safety checks in `AlmostBandedMatrix`
     return almostbanded_qr!(
-        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), copy(L)), Val(true)
+        AlmostBandedMatrix{eltype(A)}(
+            BandedMatrices.BandedMatrix(copy(B), (l, l + u)), copy(L)
+        ), Val(true)
     )
 end
 
@@ -537,7 +549,7 @@ end
 function almostbanded_qr!(R::AbstractMatrix{T}, ::Val{false}) where {T}
     l, u = almostbandwidths(R)
     B, L = bandpart(R), fillpart(R)
-    R′ = AlmostBandedMatrix{eltype(R)}(BandedMatrix(B, (l, l + u)), L)
+    R′ = AlmostBandedMatrix{eltype(R)}(BandedMatrices.BandedMatrix(B, (l, l + u)), L)
     return almostbanded_qr!(R′, Val(true))
 end
 
@@ -754,7 +766,7 @@ end
     m = 2
     n = 10
     for T in (Float32, Float64)
-        B = brand(T, n, n, m + 1, m)
+        B = BandedMatrices.brand(T, n, n, m + 1, m)
         F = rand(T, m, n)
 
         @compile_workload begin

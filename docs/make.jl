@@ -5,7 +5,6 @@ makedocs(;
     authors = "Avik Pal et al.",
     modules = [FastAlmostBandedMatrices],
     clean = true,
-    doctest = false,
     linkcheck = false,
     checkdocs = :exports,
     format = Documenter.HTML(;

@@ -1,7 +1,25 @@
 using SafeTestsets
 
+@safetestset "Documented construction API" begin
+    using BandedMatrices, FastAlmostBandedMatrices
+
+    exported = Set(names(FastAlmostBandedMatrices; all = false))
+    @test :brand ∉ exported
+    @test all(name ∉ exported for name in (:Band, :BandedMatrix, :Fill, :band, :bandwidth, :brandn))
+
+    A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+    bands = BandedMatrices.BandedMatrix(fill(1.0, 10, 10), (3, 2))
+    B = AlmostBandedMatrix(bands, rand(Float64, 2, 10))
+
+    @test A isa AlmostBandedMatrix
+    @test bandpart(A) isa BandedMatrices.BandedMatrix
+    @test almostbandwidths(A) == (3, 2)
+    @test almostbandedrank(A) == 2
+    @test B isa AlmostBandedMatrix
+end
+
 @safetestset "Constructors" begin
-    using FastAlmostBandedMatrices
+    using BandedMatrices, FastAlmostBandedMatrices
 
     A = AlmostBandedMatrix{Float64}(undef, (10, 11), (2, 1), 2)
     A[1, 1] = 2
@@ -17,7 +35,7 @@ using SafeTestsets
 end
 
 @safetestset "similar" begin
-    using FastAlmostBandedMatrices
+    using BandedMatrices, FastAlmostBandedMatrices
 
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 2, 1), rand(Float64, 2, 10))
 
@@ -30,7 +48,7 @@ end
 end
 
 @safetestset "Copy" begin
-    using FastAlmostBandedMatrices
+    using BandedMatrices, FastAlmostBandedMatrices
 
     n = 5
     m = 2
@@ -48,7 +66,7 @@ end
 end
 
 @safetestset "QR" begin
-    using LinearAlgebra, FastAlmostBandedMatrices
+    using BandedMatrices, LinearAlgebra, FastAlmostBandedMatrices
     import MatrixFactorizations: QRPackedQ
 
     n = 80
@@ -76,7 +94,7 @@ end
 end
 
 @safetestset "Triangular" begin
-    using LinearAlgebra, ArrayLayouts, FastAlmostBandedMatrices
+    using BandedMatrices, LinearAlgebra, ArrayLayouts, FastAlmostBandedMatrices
     import FastAlmostBandedMatrices: AlmostBandedLayout
 
     n = 80
@@ -92,7 +110,7 @@ end
 
 # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19
 @safetestset "fill! on sparse array with BigFloat" begin
-    using FastAlmostBandedMatrices, SparseArrays
+    using BandedMatrices, FastAlmostBandedMatrices, SparseArrays
 
     A = sparse([1, 2], [1, 5], big.([1.0, 1.0]))
     A1 = AlmostBandedMatrix(brand(BigFloat, 5, 5, 1, 1), A)
