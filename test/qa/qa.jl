@@ -1,10 +1,7 @@
 using SciMLTesting, FastAlmostBandedMatrices
 
-const REEXPORTED_API = (:brand,)
-
 run_qa(
     FastAlmostBandedMatrices;
-    reexports_allow = REEXPORTED_API,
     # 19 method ambiguities, all in FastAlmostBandedMatrices' own ldiv!/__arguments
     # against ArrayLayouts/LinearAlgebra Triangular/Factorization methods.
     # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71

@@ -4,7 +4,7 @@ using SafeTestsets
     using BandedMatrices, FastAlmostBandedMatrices
 
     exported = Set(names(FastAlmostBandedMatrices; all = false))
-    @test :brand in exported
+    @test :brand ∉ exported
     @test all(name ∉ exported for name in (:Band, :BandedMatrix, :Fill, :band, :bandwidth, :brandn))
 
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))

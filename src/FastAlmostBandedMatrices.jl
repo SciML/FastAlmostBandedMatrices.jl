@@ -7,34 +7,6 @@ using ArrayInterface, ArrayLayouts, ConcreteStructs, LazyArrays, LinearAlgebra,
 import BandedMatrices
 using BandedMatrices: bandwidth, bandwidths
 
-"""
-    brand(T, n, m, l, u)
-
-Construct a random `n`-by-`m` banded matrix with element type `T` and lower and upper
-bandwidths `l` and `u`. This constructor is reexported because it is used by the documented
-`AlmostBandedMatrix` examples.
-
-# Arguments
-
-- `T`: Element type of the generated matrix.
-- `n::Integer`: Number of rows.
-- `m::Integer`: Number of columns.
-- `l::Integer`: Number of subdiagonals.
-- `u::Integer`: Number of superdiagonals.
-
-# Returns
-
-Returns a `BandedMatrices.BandedMatrix{T}` whose entries inside the bandwidths are random.
-
-# Example
-
-```julia
-bands = brand(Float64, 8, 8, 3, 2)
-A = AlmostBandedMatrix(bands, rand(2, 8))
-```
-"""
-const brand = BandedMatrices.brand
-
 import ArrayLayouts: MemoryLayout, sublayout, MatLdivVec, materialize!,
     triangularlayout, triangulardata, colsupport,
     rowsupport, _qr, _qr!, _factorize, muladd!, QRPackedQLayout, AdjQRPackedQLayout
@@ -177,7 +149,7 @@ part.
 # Example
 
 ```julia
-bands = brand(Float64, 8, 8, 3, 2)
+bands = BandedMatrices.brand(Float64, 8, 8, 3, 2)
 fill = rand(2, 8)
 A = AlmostBandedMatrix(bands, fill)
 ```
@@ -256,7 +228,7 @@ not mutated.
 # Example
 
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 8, 8, 3, 2), rand(2, 8))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 8, 8, 3, 2), rand(2, 8))
 fillpart(A)[1, 1] = 1
 finish_part_setindex!(A)
 ```
@@ -290,7 +262,7 @@ Returns the mutable `BandedMatrix` stored by `A`; it is not a copy.
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 B = bandpart(A)  # Returns the BandedMatrix component
 ```
 """
@@ -314,7 +286,7 @@ Returns the mutable fill matrix stored by `A`; it is not a copy. Call
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 F = fillpart(A)  # Returns the fill matrix (2×10)
 ```
 """
@@ -337,7 +309,7 @@ Returns a view into `bandpart(A)`, not a copy.
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 E = exclusive_bandpart(A)  # Returns a view of rows 3:10 of the banded part
 ```
 """
@@ -363,7 +335,7 @@ Returns `(l, u)`, where `l` is the lower bandwidth and `u` is the upper bandwidt
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 almostbandwidths(A)  # Returns (3, 2)
 ```
 """
@@ -389,7 +361,7 @@ Returns the number of rows in `fillpart(A)`.
 
 # Example
 ```julia
-A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
+A = AlmostBandedMatrix(BandedMatrices.brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
 almostbandedrank(A)  # Returns 2
 ```
 """
@@ -794,7 +766,7 @@ end
     m = 2
     n = 10
     for T in (Float32, Float64)
-        B = brand(T, n, n, m + 1, m)
+        B = BandedMatrices.brand(T, n, n, m + 1, m)
         F = rand(T, m, n)
 
         @compile_workload begin
@@ -809,7 +781,7 @@ end
     end
 end
 
-export AlmostBandedMatrix, brand, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!,
+export AlmostBandedMatrix, bandpart, fillpart, exclusive_bandpart, finish_part_setindex!,
     almostbandwidths, almostbandedrank
 
 end
