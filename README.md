@@ -23,7 +23,7 @@ repository.
 ### Basic Construction and Usage
 
 ```julia
-using BandedMatrices, FastAlmostBandedMatrices, LinearAlgebra
+using FastAlmostBandedMatrices, LinearAlgebra
 
 m = 2  # Fill rank
 n = 10 # Matrix dimension
@@ -58,7 +58,7 @@ Q, R = fact.Q, fact.R
 <p>
 
 ```julia
-using BandedMatrices, BenchmarkTools, FastAlmostBandedMatrices, SparseArrays, FillArrays, LinearAlgebra
+using BenchmarkTools, FastAlmostBandedMatrices, SparseArrays, FillArrays, LinearAlgebra
 import SemiseparableMatrices
 
 m = 5
@@ -189,6 +189,19 @@ exclusive_bandpart
 almostbandwidths
 almostbandedrank
 finish_part_setindex!
+```
+
+Because the documented constructor is `AlmostBandedMatrix(bands::BandedMatrix, fill)`,
+`using FastAlmostBandedMatrices` also brings along the
+[BandedMatrices.jl](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl) names needed to
+build, populate and query that `bands` argument. They remain owned and documented by
+BandedMatrices.jl:
+
+```
+BandedMatrix brand brandn
+Band BandRange band bandrange
+bandwidth bandwidths colrange rowrange
+BandError
 ```
 
 ## Some Considerations
