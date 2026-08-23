@@ -191,18 +191,26 @@ almostbandedrank
 finish_part_setindex!
 ```
 
-Because the documented constructor is `AlmostBandedMatrix(bands::BandedMatrix, fill)`,
-`using FastAlmostBandedMatrices` also brings along the
-[BandedMatrices.jl](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl) names needed to
-build, populate and query that `bands` argument. They remain owned and documented by
-BandedMatrices.jl:
+### Reexported from BandedMatrices.jl
 
-```
-BandedMatrix brand brandn
-Band BandRange band bandrange
-bandwidth bandwidths colrange rowrange
-BandError
-```
+`AlmostBandedMatrix(bands::BandedMatrix, fill)` is the documented constructor and the
+examples above build `bands` with `brand`, so `using FastAlmostBandedMatrices` also brings
+in the [BandedMatrices.jl](https://juliaLinearAlgebra.github.io/BandedMatrices.jl/stable/)
+names needed to build that banded argument, populate it and query it:
+
+  - Building the bands: `BandedMatrix`, `brand`, `brandn`
+  - Populating them: `Band`, `BandRange`, `band`, `bandrange`
+  - Querying them: `bandwidth`, `bandwidths`, `colrange`, `rowrange`
+  - Errors: `BandError`
+
+These names are owned and documented by
+[BandedMatrices.jl](https://juliaLinearAlgebra.github.io/BandedMatrices.jl/stable/);
+FastAlmostBandedMatrices.jl only re-exports them and does not document them. Anything else
+from BandedMatrices.jl must be imported from BandedMatrices.jl directly. In particular,
+the FillArrays.jl names it reexports in turn (`Fill`, `Ones`, `Zeros`, `Eye`), the
+`BandedMatrices` module binding itself, and `symrcm` are deliberately not passed along.
+See the [API page](https://docs.sciml.ai/FastAlmostBandedMatrices/stable/api/) for the
+details.
 
 ## Some Considerations
 

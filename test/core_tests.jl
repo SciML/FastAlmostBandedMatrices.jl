@@ -4,8 +4,8 @@ using SafeTestsets
     using FastAlmostBandedMatrices
     import BandedMatrices
 
-    # Kept in sync with the reexport `export` block in src/FastAlmostBandedMatrices.jl and
-    # with `REEXPORTED_API` in test/qa/qa.jl.
+    # Kept in sync with the reexport `export` block in src/FastAlmostBandedMatrices.jl,
+    # `REEXPORTED_API` in test/qa/qa.jl, and the reexport section of docs/src/api.md.
     reexports = (
         :Band, :BandError, :BandRange, :BandedMatrix, :band, :bandrange, :bandwidth,
         :bandwidths, :brand, :brandn, :colrange, :rowrange,
@@ -24,6 +24,72 @@ using SafeTestsets
     # and unrelated names stay out.
     for name in (:Fill, :Ones, :Zeros, :Eye, :symrcm, :BandedMatrices)
         @test name ∉ exported
+    end
+
+    # The same list lives in three places: the `export` block in src (checked above via
+    # `names`), `REEXPORTED_API` in test/qa/qa.jl, and the "Reexported from
+    # BandedMatrices.jl" section of docs/src/api.md. They must not drift apart.
+    #
+    # Both files are read line-wise after normalising the line endings: git checks these
+    # files out with CRLF on Windows, so nothing here may assume "\n".
+    readlines_lf(path) = split(replace(read(path, String), "\r\n" => "\n", "\r" => "\n"), '\n')
+
+    qa_file = joinpath(@__DIR__, "qa", "qa.jl")
+    if isfile(qa_file)
+        qa_source = join(readlines_lf(qa_file), '\n')
+        block = match(r"REEXPORTED_API = \((.*?)\)"s, qa_source)
+        block === nothing &&
+            @error "reexport sync: no `REEXPORTED_API = (...)` found" file = qa_file
+        @test block !== nothing
+        if block !== nothing
+            declared = Set(Symbol(m[1]) for m in eachmatch(r":(\w+)", block[1]))
+            declared == Set(reexports) || @error(
+                "reexport sync: REEXPORTED_API disagrees with the exports",
+                file = qa_file, only_in_file = setdiff(declared, Set(reexports)),
+                only_in_exports = setdiff(Set(reexports), declared)
+            )
+            @test declared == Set(reexports)
+        end
+    end
+
+    docs_file = joinpath(@__DIR__, "..", "docs", "src", "api.md")
+    if isfile(docs_file)
+        heading = "## Reexported from BandedMatrices.jl"
+        lines = readlines_lf(docs_file)
+        # Structural, not prose-anchored: the section runs from its heading to the next
+        # `## ` heading (or the end of the file).
+        is_bullet(line) = startswith(line, "  - ")
+        start = findfirst(line -> rstrip(line) == heading, lines)
+        start === nothing &&
+            @error "reexport sync: heading not found in docs" file = docs_file heading
+        @test start !== nothing
+        if start !== nothing
+            stop = findnext(line -> startswith(line, "## "), lines, start + 1)
+            section = lines[start:(stop === nothing ? lastindex(lines) : stop - 1)]
+            # Only the first contiguous run of bullets under the heading is the list of
+            # reexported names ("  - Building the bands: `BandedMatrix`, ..."); the later
+            # bullet list in the same section is the deliberate *exclusions*.
+            bullets = String[]
+            idx = findfirst(is_bullet, section)
+            while idx !== nothing && idx <= lastindex(section) && is_bullet(section[idx])
+                push!(bullets, String(section[idx]))
+                idx += 1
+            end
+            isempty(bullets) && @error(
+                "reexport sync: no `  - ` role bullets under the heading",
+                file = docs_file, heading
+            )
+            @test !isempty(bullets)
+            documented = Set(
+                Symbol(m[1]) for line in bullets for m in eachmatch(r"`(\w+)`", line)
+            )
+            documented == Set(reexports) || @error(
+                "reexport sync: the docs section disagrees with the exports",
+                file = docs_file, only_in_docs = setdiff(documented, Set(reexports)),
+                only_in_exports = setdiff(Set(reexports), documented)
+            )
+            @test documented == Set(reexports)
+        end
     end
 
     # The documented construction path works with `using FastAlmostBandedMatrices` alone.
