@@ -1,25 +1,45 @@
 using SafeTestsets
 
-@safetestset "Documented construction API" begin
-    using BandedMatrices, FastAlmostBandedMatrices
+@safetestset "Reexported BandedMatrices API" begin
+    using FastAlmostBandedMatrices
+    import BandedMatrices
 
-    exported = Set(names(FastAlmostBandedMatrices; all = false))
-    @test :brand ∉ exported
-    @test all(name ∉ exported for name in (:Band, :BandedMatrix, :Fill, :band, :bandwidth, :brandn))
+    # Kept in sync with the reexport `export` block in src/FastAlmostBandedMatrices.jl and
+    # with `REEXPORTED_API` in test/qa/qa.jl.
+    reexports = (
+        :Band, :BandError, :BandRange, :BandedMatrix, :band, :bandrange, :bandwidth,
+        :bandwidths, :brand, :brandn, :colrange, :rowrange,
+    )
 
+    exported = Set(names(FastAlmostBandedMatrices))
+    for name in reexports
+        # Exported, in scope from a bare `using FastAlmostBandedMatrices`, and still the
+        # upstream binding rather than a copy.
+        @test name in exported
+        @test isdefined(@__MODULE__, name)
+        @test getfield(FastAlmostBandedMatrices, name) === getfield(BandedMatrices, name)
+    end
+
+    # Whole dependencies are not reexported: BandedMatrices' own reexports (FillArrays)
+    # and unrelated names stay out.
+    for name in (:Fill, :Ones, :Zeros, :Eye, :symrcm, :BandedMatrices)
+        @test name ∉ exported
+    end
+
+    # The documented construction path works with `using FastAlmostBandedMatrices` alone.
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 3, 2), rand(Float64, 2, 10))
-    bands = BandedMatrices.BandedMatrix(fill(1.0, 10, 10), (3, 2))
-    B = AlmostBandedMatrix(bands, rand(Float64, 2, 10))
+    B = AlmostBandedMatrix(BandedMatrix(fill(1.0, 10, 10), (3, 2)), rand(Float64, 2, 10))
 
     @test A isa AlmostBandedMatrix
-    @test bandpart(A) isa BandedMatrices.BandedMatrix
+    @test B isa AlmostBandedMatrix
+    @test bandpart(A) isa BandedMatrix
+    @test bandwidths(bandpart(A)) == (3, 2)
     @test almostbandwidths(A) == (3, 2)
     @test almostbandedrank(A) == 2
-    @test B isa AlmostBandedMatrix
 end
 
 @safetestset "Constructors" begin
-    using BandedMatrices, FastAlmostBandedMatrices
+    using FastAlmostBandedMatrices
 
     A = AlmostBandedMatrix{Float64}(undef, (10, 11), (2, 1), 2)
     A[1, 1] = 2
@@ -35,7 +55,7 @@ end
 end
 
 @safetestset "similar" begin
-    using BandedMatrices, FastAlmostBandedMatrices
+    using FastAlmostBandedMatrices
 
     A = AlmostBandedMatrix(brand(Float64, 10, 10, 2, 1), rand(Float64, 2, 10))
 
@@ -48,7 +68,7 @@ end
 end
 
 @safetestset "Copy" begin
-    using BandedMatrices, FastAlmostBandedMatrices
+    using FastAlmostBandedMatrices
 
     n = 5
     m = 2
@@ -66,7 +86,7 @@ end
 end
 
 @safetestset "QR" begin
-    using BandedMatrices, LinearAlgebra, FastAlmostBandedMatrices
+    using LinearAlgebra, FastAlmostBandedMatrices
     import MatrixFactorizations: QRPackedQ
 
     n = 80
@@ -94,7 +114,7 @@ end
 end
 
 @safetestset "Triangular" begin
-    using BandedMatrices, LinearAlgebra, ArrayLayouts, FastAlmostBandedMatrices
+    using LinearAlgebra, ArrayLayouts, FastAlmostBandedMatrices
     import FastAlmostBandedMatrices: AlmostBandedLayout
 
     n = 80
@@ -110,7 +130,7 @@ end
 
 # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19
 @safetestset "fill! on sparse array with BigFloat" begin
-    using BandedMatrices, FastAlmostBandedMatrices, SparseArrays
+    using FastAlmostBandedMatrices, SparseArrays
 
     A = sparse([1, 2], [1, 5], big.([1.0, 1.0]))
     A1 = AlmostBandedMatrix(brand(BigFloat, 5, 5, 1, 1), A)
