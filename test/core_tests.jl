@@ -4,8 +4,8 @@ using SafeTestsets
     using FastAlmostBandedMatrices
     import BandedMatrices
 
-    # Kept in sync with the reexport `export` block in src/FastAlmostBandedMatrices.jl and
-    # with `REEXPORTED_API` in test/qa/qa.jl.
+    # Kept in sync with the reexport `export` block in src/FastAlmostBandedMatrices.jl,
+    # `REEXPORTED_API` in test/qa/qa.jl, and the reexport section of docs/src/api.md.
     reexports = (
         :Band, :BandError, :BandRange, :BandedMatrix, :band, :bandrange, :bandwidth,
         :bandwidths, :brand, :brandn, :colrange, :rowrange,
@@ -24,6 +24,29 @@ using SafeTestsets
     # and unrelated names stay out.
     for name in (:Fill, :Ones, :Zeros, :Eye, :symrcm, :BandedMatrices)
         @test name ∉ exported
+    end
+
+    # The same list lives in three places: the `export` block in src (checked above via
+    # `names`), `REEXPORTED_API` in test/qa/qa.jl, and the "Reexported from
+    # BandedMatrices.jl" section of docs/src/api.md. They must not drift apart.
+    qa_file = joinpath(@__DIR__, "qa", "qa.jl")
+    if isfile(qa_file)
+        block = match(r"REEXPORTED_API = \((.*?)\)"s, read(qa_file, String))
+        @test block !== nothing
+        declared = Set(Symbol(m[1]) for m in eachmatch(r":(\w+)", block[1]))
+        @test declared == Set(reexports)
+    end
+
+    docs_file = joinpath(@__DIR__, "..", "docs", "src", "api.md")
+    if isfile(docs_file)
+        section = match(
+            r"## Reexported from BandedMatrices\.jl(.*?)\n\nThese names are owned"s,
+            read(docs_file, String),
+        )
+        @test section !== nothing
+        bullets = join(filter(startswith("  - "), split(section[1], '\n')), '\n')
+        documented = Set(Symbol(m[1]) for m in eachmatch(r"`(\w+)`", bullets))
+        @test documented == Set(reexports)
     end
 
     # The documented construction path works with `using FastAlmostBandedMatrices` alone.
