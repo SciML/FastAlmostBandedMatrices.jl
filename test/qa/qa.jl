@@ -12,9 +12,6 @@ const REEXPORTED_API = (
 run_qa(
     FastAlmostBandedMatrices;
     reexports_allow = REEXPORTED_API,
-    # `Band` and `BandError` are reexported but carry no docstring upstream in
-    # BandedMatrices.jl, so the public-API docstring check has nothing to find for them.
-    api_docs_kwargs = (; ignore = (:Band, :BandError)),
     ei_kwargs = (;
         # Non-public names this package legitimately extends/uses from upstream:
         # ArrayLayouts MatLdivVec/sublayout/triangulardata/triangularlayout/_qr/_qr!/

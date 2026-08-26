@@ -42,11 +42,8 @@ to be imported separately:
   - Querying them: `bandwidth`, `bandwidths`, `colrange`, `rowrange`
   - Errors: `BandError`
 
-These names are owned and documented by
+These names are defined and documented by
 [BandedMatrices.jl](https://juliaLinearAlgebra.github.io/BandedMatrices.jl/stable/).
-FastAlmostBandedMatrices.jl only re-exports them; it does not document them and does not
-define their behaviour, so BandedMatrices.jl's own documentation is the reference for what
-each one does.
 
 Anything else from BandedMatrices.jl must be imported from BandedMatrices.jl directly.
 In particular, the following are deliberately **not** reexported:
@@ -60,10 +57,16 @@ In particular, the following are deliberately **not** reexported:
     the qualified form.
   - `symrcm`, a sparse-matrix reordering unrelated to this package.
 
-`Band` and `BandError` have no docstring upstream in BandedMatrices.jl, so they are listed
-in the `api_docs_kwargs` ignore list in `test/qa/qa.jl` rather than documented here; that
-docstring is owed by BandedMatrices.jl. Every other reexported name above carries its own
+The `Band` and `BandError` types are defined by
+[BandedMatrices.jl](https://juliaLinearAlgebra.github.io/BandedMatrices.jl/stable/), and
+FastAlmostBandedMatrices.jl documents their public bindings here because they are part of
+its documented construction workflow. Every other reexported name above carries its
 upstream docstring, reachable from the REPL help mode.
+
+```@docs
+Band
+BandError
+```
 
 The list above is kept in sync with the reexport `export` block in
 `src/FastAlmostBandedMatrices.jl` and with `REEXPORTED_API` in `test/qa/qa.jl`, and the
