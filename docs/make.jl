@@ -1,5 +1,12 @@
 using Documenter, FastAlmostBandedMatrices
 
+DocMeta.setdocmeta!(
+    FastAlmostBandedMatrices,
+    :DocTestSetup,
+    :(using FastAlmostBandedMatrices),
+    recursive = true,
+)
+
 makedocs(;
     sitename = "FastAlmostBandedMatrices.jl",
     authors = "Avik Pal et al.",
