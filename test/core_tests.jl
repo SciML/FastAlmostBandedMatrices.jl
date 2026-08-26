@@ -173,6 +173,8 @@ end
     @test A \ b ≈ Matrix(A) \ b
     @test all(A \ b .=== F \ b)
     @test all(A \ b .=== F.R \ (F.Q' * b))
+    @test ldiv!(F, copy(b)) ≈ Matrix(A) \ b
+    @test ldiv!(F, reshape(copy(b), :, 1)) ≈ reshape(Matrix(A) \ b, :, 1)
     Q̃ = QRPackedQ(F.factors, F.τ)
     @test Matrix(Q̃) ≈ Matrix(F.Q)
     @test lmul!(Q̃, copy(b)) ≈ lmul!(F.Q, copy(b)) ≈ Matrix(F.Q) * b
