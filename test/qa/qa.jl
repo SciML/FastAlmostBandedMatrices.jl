@@ -15,10 +15,6 @@ run_qa(
     # `Band` and `BandError` are reexported but carry no docstring upstream in
     # BandedMatrices.jl, so the public-API docstring check has nothing to find for them.
     api_docs_kwargs = (; ignore = (:Band, :BandError)),
-    # 19 method ambiguities, all in FastAlmostBandedMatrices' own ldiv!/__arguments
-    # against ArrayLayouts/LinearAlgebra Triangular/Factorization methods.
-    # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71
-    aqua_broken = (:ambiguities,),
     ei_kwargs = (;
         # Non-public names this package legitimately extends/uses from upstream:
         # ArrayLayouts MatLdivVec/sublayout/triangulardata/triangularlayout/_qr/_qr!/
@@ -42,9 +38,4 @@ run_qa(
             ),
         ),
     ),
-    # 31 names implicitly imported via the package's `using ArrayInterface, ArrayLayouts,
-    # ConcreteStructs, LazyArrays, LinearAlgebra, ...`; explicit-import conversion tracked
-    # separately.
-    # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/71
-    ei_broken = (:no_implicit_imports,),
 )

@@ -2,8 +2,15 @@ module FastAlmostBandedMatrices
 
 import PrecompileTools: @setup_workload, @compile_workload
 
-using ArrayInterface, ArrayLayouts, ConcreteStructs, LazyArrays, LinearAlgebra,
-    MatrixFactorizations
+import ArrayInterface
+import ArrayLayouts
+import ArrayLayouts: LayoutMatrix, LayoutVector, Ldiv, Lmul, TriangularLayout
+import ConcreteStructs: @concrete
+import LazyArrays: LazyArray, Mul
+import LinearAlgebra
+import LinearAlgebra: LowerTriangular, NoPivot, UnitLowerTriangular, UnitUpperTriangular,
+    UpperTriangular, diagind, lmul!, lu, qr, rank, triu!
+import MatrixFactorizations
 
 # The BandedMatrices.jl surface that FastAlmostBandedMatrices reexports (see the second
 # `export` below), so that `using FastAlmostBandedMatrices` on its own is enough to build
@@ -640,21 +647,25 @@ end
 
 _almostbanded_widerect_ldiv!(::QR{T}, B) where {T} = error("Not implemented")
 
-const UpperLayoutMatrix{T} = UpperTriangular{T, <:LayoutMatrix{T}}
-
-for Typ in
-    (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix, :LayoutMatrix)
-    @eval function ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::$Typ{T}) where {T}
-        m, n = size(A)
-        return if m == n
-            _almostbanded_square_ldiv!(A, B)
-        elseif n > m
-            _almostbanded_widerect_ldiv!(A, B)
-        else
-            _almostbanded_longrect_ldiv!(A, B)
-        end
+function _almostbanded_ldiv!(A::QR, B)
+    m, n = size(A)
+    return if m == n
+        _almostbanded_square_ldiv!(A, B)
+    elseif n > m
+        _almostbanded_widerect_ldiv!(A, B)
+    else
+        _almostbanded_longrect_ldiv!(A, B)
     end
 end
+
+ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::StridedVector{T}) where {T} =
+    _almostbanded_ldiv!(A, B)
+ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::StridedMatrix{T}) where {T} =
+    _almostbanded_ldiv!(A, B)
+ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::LayoutVector{T}) where {T} =
+    _almostbanded_ldiv!(A, B)
+ldiv!(A::QR{T, <:AlmostBandedMatrix}, B::LayoutMatrix{T}) where {T} =
+    _almostbanded_ldiv!(A, B)
 
 # needed for adaptive QR
 function Base.materialize!(M::Lmul{<:QRPackedQLayout{<:AlmostBandedLayout}})
@@ -668,6 +679,12 @@ end
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML <: AlmostBandedLayout} = Tri{ML}()
 
 @inline function __arguments(x::LazyArray, ::AlmostBandedMatrix, ::Val)
+    return LazyArrays.arguments(x)
+end
+@inline function __arguments(x::LazyArray, ::AlmostBandedMatrix, ::Val{false})
+    return LazyArrays.arguments(x)
+end
+@inline function __arguments(x::LazyArray, ::AlmostBandedMatrix, ::Val{true})
     return LazyArrays.arguments(x)
 end
 @inline __arguments(x::Mul, ::AlmostBandedMatrix, ::Val) = (x.A, x.B)
