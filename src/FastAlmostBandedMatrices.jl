@@ -6,6 +6,7 @@ import ArrayInterface
 import ArrayLayouts
 import ArrayLayouts: LayoutMatrix, LayoutVector, Ldiv, Lmul, TriangularLayout
 import ConcreteStructs: @concrete
+import LazyArrays
 import LazyArrays: LazyArray, Mul
 import LinearAlgebra
 import LinearAlgebra: LowerTriangular, NoPivot, UnitLowerTriangular, UnitUpperTriangular,
@@ -812,6 +813,19 @@ function Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'U', AlmostBanded
     _almostbanded_upper_ldiv!(UnitUpperTriangular, A, x, Vector{eltype(M)}(undef, r))
     return x
 end
+
+# A padded right-hand side is zero past its data, so an upper-triangular solve only
+# needs the leading square block; the `Zeros` tail cannot be written into anyway.
+function _padded_upper_ldiv!(T, R, x)
+    A = triangulardata(R)
+    p = LazyArrays.paddeddata(x)
+    n = size(p, 1)
+    ldiv!(T(Matrix(view(A, 1:n, 1:n))), p)
+    return x
+end
+
+Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'N', AlmostBandedLayout}, <:LazyArrays.PaddedColumns}) = _padded_upper_ldiv!(UpperTriangular, M.A, M.B)
+Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'U', AlmostBandedLayout}, <:LazyArrays.PaddedColumns}) = _padded_upper_ldiv!(UnitUpperTriangular, M.A, M.B)
 
 function Base.materialize!(M::MatLdivVec{TriangularLayout{'L', 'N', AlmostBandedLayout}})
     R, x = M.A, M.B
