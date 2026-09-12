@@ -7,8 +7,18 @@ using SafeTestsets
     # Kept in sync with the reexport `export` block in src/FastAlmostBandedMatrices.jl,
     # `REEXPORTED_API` in test/qa/qa.jl, and the reexport section of docs/src/api.md.
     reexports = (
-        :Band, :BandError, :BandRange, :BandedMatrix, :band, :bandrange, :bandwidth,
-        :bandwidths, :brand, :brandn, :colrange, :rowrange,
+        :Band,
+        :BandError,
+        :BandRange,
+        :BandedMatrix,
+        :band,
+        :bandrange,
+        :bandwidth,
+        :bandwidths,
+        :brand,
+        :brandn,
+        :colrange,
+        :rowrange,
     )
 
     exported = Set(names(FastAlmostBandedMatrices))
@@ -32,7 +42,8 @@ using SafeTestsets
     #
     # Both files are read line-wise after normalising the line endings: git checks these
     # files out with CRLF on Windows, so nothing here may assume "\n".
-    readlines_lf(path) = split(replace(read(path, String), "\r\n" => "\n", "\r" => "\n"), '\n')
+    readlines_lf(path) =
+        split(replace(read(path, String), "\r\n" => "\n", "\r" => "\n"), '\n')
 
     qa_file = joinpath(@__DIR__, "qa", "qa.jl")
     if isfile(qa_file)
@@ -45,7 +56,8 @@ using SafeTestsets
             declared = Set(Symbol(m[1]) for m in eachmatch(r":(\w+)", block[1]))
             declared == Set(reexports) || @error(
                 "reexport sync: REEXPORTED_API disagrees with the exports",
-                file = qa_file, only_in_file = setdiff(declared, Set(reexports)),
+                file = qa_file,
+                only_in_file = setdiff(declared, Set(reexports)),
                 only_in_exports = setdiff(Set(reexports), declared)
             )
             @test declared == Set(reexports)
@@ -65,7 +77,7 @@ using SafeTestsets
         @test start !== nothing
         if start !== nothing
             stop = findnext(line -> startswith(line, "## "), lines, start + 1)
-            section = lines[start:(stop === nothing ? lastindex(lines) : stop - 1)]
+            section = lines[start:(stop===nothing ? lastindex(lines) : stop-1)]
             # Only the first contiguous run of bullets under the heading is the list of
             # reexported names ("  - Building the bands: `BandedMatrix`, ..."); the later
             # bullet list in the same section is the deliberate *exclusions*.
@@ -77,15 +89,16 @@ using SafeTestsets
             end
             isempty(bullets) && @error(
                 "reexport sync: no `  - ` role bullets under the heading",
-                file = docs_file, heading
+                file = docs_file,
+                heading
             )
             @test !isempty(bullets)
-            documented = Set(
-                Symbol(m[1]) for line in bullets for m in eachmatch(r"`(\w+)`", line)
-            )
+            documented =
+                Set(Symbol(m[1]) for line in bullets for m in eachmatch(r"`(\w+)`", line))
             documented == Set(reexports) || @error(
                 "reexport sync: the docs section disagrees with the exports",
-                file = docs_file, only_in_docs = setdiff(documented, Set(reexports)),
+                file = docs_file,
+                only_in_docs = setdiff(documented, Set(reexports)),
                 only_in_exports = setdiff(Set(reexports), documented)
             )
             @test documented == Set(reexports)
@@ -162,8 +175,8 @@ end
     B, L = bandpart(A), fillpart(A)
 
     F = qr(A)
-    @test F.Q isa LinearAlgebra.QRPackedQ{Float64, <:BandedMatrix}
-    @test F.R isa UpperTriangular{Float64, <:SubArray{Float64, 2, <:AlmostBandedMatrix}}
+    @test F.Q isa LinearAlgebra.QRPackedQ{Float64,<:BandedMatrix}
+    @test F.R isa UpperTriangular{Float64,<:SubArray{Float64,2,<:AlmostBandedMatrix}}
     @test F.Q' * A ≈ F.R
     @test A == Ã
 
@@ -188,8 +201,7 @@ end
     n = 80
     A = AlmostBandedMatrix(BandedMatrix(fill(2.0, n, n), (1, 1)), fill(3.0, 1, n))
     b = randn(n)
-    @test MemoryLayout(UpperTriangular(A)) ==
-        TriangularLayout{'U', 'N', AlmostBandedLayout}()
+    @test MemoryLayout(UpperTriangular(A)) == TriangularLayout{'U','N',AlmostBandedLayout}()
     @test_broken UpperTriangular(Matrix(A)) \ b ≈ UpperTriangular(A) \ b
     @test_broken UnitUpperTriangular(Matrix(A)) \ b ≈ UnitUpperTriangular(A) \ b
     @test LowerTriangular(Matrix(A)) \ b ≈ LowerTriangular(A) \ b
