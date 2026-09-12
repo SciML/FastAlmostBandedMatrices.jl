@@ -194,6 +194,11 @@ end
     @test_broken UnitUpperTriangular(Matrix(A)) \ b ≈ UnitUpperTriangular(A) \ b
     @test LowerTriangular(Matrix(A)) \ b ≈ LowerTriangular(A) \ b
     @test UnitLowerTriangular(Matrix(A)) \ b ≈ UnitLowerTriangular(A) \ b
+
+    const LA = FastAlmostBandedMatrices.LazyArrays
+    bpad = LA.Vcat(b[1:5], LA.Zeros(n - 5))
+    @test UpperTriangular(A) \ bpad ≈ UpperTriangular(Matrix(A)) \ Vector(bpad)
+    @test UnitUpperTriangular(A) \ bpad ≈ UnitUpperTriangular(Matrix(A)) \ Vector(bpad)
 end
 
 # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19

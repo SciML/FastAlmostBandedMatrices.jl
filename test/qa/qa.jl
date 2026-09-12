@@ -32,6 +32,7 @@ run_qa(
             ignore = (
                 :OneTo, :array_summary, :dims2string, :inds2string, :materialize!,
                 :QRPackedQ, :arguments, :fast_scalar_indexing, :qr_instance,
+                :PaddedColumns, :paddeddata,
             ),
         ),
     ),
