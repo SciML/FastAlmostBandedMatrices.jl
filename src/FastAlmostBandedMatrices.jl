@@ -613,7 +613,7 @@ function _almostbanded_qr(_, A)
     # Expand the bandsize for the QR factorization
     ## Bypass the safety checks in `AlmostBandedMatrix`
     return almostbanded_qr!(
-        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), copy(L)), Val(true)
+        AlmostBandedMatrix{eltype(A)}(BandedMatrix(copy(B), (l, l + u)), Matrix(L)), Val(true)
     )
 end
 
@@ -641,7 +641,8 @@ end
 
 @views function _almostbanded_qr!(A::AbstractMatrix, τ::AbstractVector, ncols::Int)
     T = eltype(A)
-    B, L = bandpart(A), fillpart(A)
+    B = bandpart(A)
+    L = convert(Matrix{T}, fillpart(A))
     l, u = bandwidths(B)
     m, n = size(A)
     mf = size(L, 1)
