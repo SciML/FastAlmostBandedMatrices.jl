@@ -205,3 +205,31 @@ end
     fill!(A1, BigFloat(0.0))
     @test length(A1.fill.nzval) == 2
 end
+
+@safetestset "QR with a sparse boundary block" begin
+    using FastAlmostBandedMatrices, LinearAlgebra, SparseArrays
+
+    for T in (Float64, ComplexF64), m in (40, 48), storage in (Matrix, sparse)
+        n = 40
+        B = BandedMatrix(randn(T, m, n), (3, 2))
+        B[band(0)] .+= 10
+        L = zeros(T, 3, n)
+        L[:, 1:3] = 10Matrix{T}(I, 3, 3)
+        L[:, (n - 2):n] = randn(T, 3, 3)
+        A = AlmostBandedMatrix(B, storage(L))
+        reference = Matrix(A)
+        b = randn(T, m)
+        for factorize in (qr, qr!)
+            F = factorize(copy(A))
+            U, V = fillpart(F.factors).A, fillpart(F.factors).B
+            @test U isa Matrix{T}
+            @test V isa Matrix{T}
+            @test typeof(F) === typeof(FastAlmostBandedMatrices.ArrayInterface.qr_instance(A))
+            @test F \ b ≈ reference \ b
+            @test Matrix(A) == reference
+        end
+        F = qr(A)
+        @test Matrix(A) == reference # non-mutating QR must preserve its input
+        @test F \ b ≈ reference \ b
+    end
+end
