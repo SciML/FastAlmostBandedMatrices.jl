@@ -194,6 +194,17 @@ end
     @test_broken UnitUpperTriangular(Matrix(A)) \ b ≈ UnitUpperTriangular(A) \ b
     @test LowerTriangular(Matrix(A)) \ b ≈ LowerTriangular(A) \ b
     @test UnitLowerTriangular(Matrix(A)) \ b ≈ UnitLowerTriangular(A) \ b
+
+    LA = FastAlmostBandedMatrices.LazyArrays
+    # The padded-ldiv path (LazyArrays' `materialize!` for
+    # `MatLdivVec{<:UnitOrUpperTriangularLayout, <:PaddedColumns}`, and `Vcat`
+    # with a `Zeros` tail producing a `PaddedColumns`) only exists in
+    # LazyArrays 2.13; below it padded triangular solves have no upstream path.
+    if Base.pkgversion(LA) >= v"2.13"
+        bpad = LA.Vcat(b[1:5], LA.Zeros(n - 5))
+        @test UpperTriangular(A) \ bpad ≈ UpperTriangular(Matrix(A)) \ Vector(bpad)
+        @test UnitUpperTriangular(A) \ bpad ≈ UnitUpperTriangular(Matrix(A)) \ Vector(bpad)
+    end
 end
 
 # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19
