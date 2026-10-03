@@ -228,10 +228,9 @@ end
     Asing[band(0)] .= 2
     Asing[2, 2] = 0
     bsing = LA.Vcat([1.0, 2.0], LA.Zeros(2))
+    # Package path must throw SingularException; dense LAPACK may throw
+    # LAPACKException instead (Julia 1.10) so is not asserted here.
     @test_throws SingularException(2) ldiv!(UpperTriangular(Asing), copy(bsing))
-    @test_throws SingularException(2) ldiv!(
-        UpperTriangular(Matrix(Asing)), copy(Vector(bsing))
-    )
 end
 
 # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19
