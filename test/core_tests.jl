@@ -196,14 +196,22 @@ end
     @test UnitLowerTriangular(Matrix(A)) \ b ≈ UnitLowerTriangular(A) \ b
 
     LA = FastAlmostBandedMatrices.LazyArrays
-    # The padded-ldiv path (LazyArrays' `materialize!` for
-    # `MatLdivVec{<:UnitOrUpperTriangularLayout, <:PaddedColumns}`, and `Vcat`
-    # with a `Zeros` tail producing a `PaddedColumns`) only exists in
-    # LazyArrays 2.13; below it padded triangular solves have no upstream path.
+    # `Vcat(v, Zeros)` already has `PaddedColumns` layout on the LazyArrays 2.0
+    # compat floor. LazyArrays 2.13 added its own padded upper-triangular
+    # `materialize!`, which is what created the ambiguity, but the intersection
+    # methods are selected for in-place `ldiv!` on the whole compat range.
+    # Out-of-place `\` on older LazyArrays copies the RHS to a dense `Vector`
+    # first and therefore misses this path (hitting the pre-existing broken
+    # dense-fill upper solve instead).
+    bpad = LA.Vcat(b[1:5], LA.Zeros(n - 5))
+    @test ldiv!(UpperTriangular(A), copy(bpad)) ≈
+        UpperTriangular(Matrix(A)) \ Vector(bpad)
+    @test ldiv!(UnitUpperTriangular(A), copy(bpad)) ≈
+        UnitUpperTriangular(Matrix(A)) \ Vector(bpad)
     if Base.pkgversion(LA) >= v"2.13"
-        bpad = LA.Vcat(b[1:5], LA.Zeros(n - 5))
         @test UpperTriangular(A) \ bpad ≈ UpperTriangular(Matrix(A)) \ Vector(bpad)
-        @test UnitUpperTriangular(A) \ bpad ≈ UnitUpperTriangular(Matrix(A)) \ Vector(bpad)
+        @test UnitUpperTriangular(A) \ bpad ≈
+            UnitUpperTriangular(Matrix(A)) \ Vector(bpad)
     end
 end
 
