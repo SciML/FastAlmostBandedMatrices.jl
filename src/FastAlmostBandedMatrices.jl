@@ -9,8 +9,8 @@ import ConcreteStructs: @concrete
 import LazyArrays
 import LazyArrays: LazyArray, Mul
 import LinearAlgebra
-import LinearAlgebra: LowerTriangular, NoPivot, UnitLowerTriangular, UnitUpperTriangular,
-    UpperTriangular, diagind, lmul!, lu, qr, rank, triu!
+import LinearAlgebra: LowerTriangular, NoPivot, SingularException, UnitLowerTriangular,
+    UnitUpperTriangular, UpperTriangular, diagind, lmul!, lu, qr, rank, triu!
 import MatrixFactorizations
 
 # The BandedMatrices.jl surface that FastAlmostBandedMatrices reexports (see the second
@@ -831,16 +831,23 @@ end
     _, u = almostbandwidths(Av)
     for k in n:-1:1
         s = b[k]
+        # Superdiagonals only: `k + u` can be < `k` when `u` is negative.
         jmax_band = min(n, k + u)
         for j in (k + 1):jmax_band
             s -= Av[k, j] * b[j]
         end
         if k <= rnk
-            for j in (jmax_band + 1):n
+            for j in max(jmax_band + 1, k + 1):n
                 s -= Av[k, j] * b[j]
             end
         end
-        b[k] = unit ? s : s / Av[k, k]
+        if unit
+            b[k] = s
+        else
+            akk = Av[k, k]
+            iszero(akk) && throw(SingularException(k))
+            b[k] = s / akk
+        end
     end
     return x
 end

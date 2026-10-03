@@ -196,13 +196,8 @@ end
     @test UnitLowerTriangular(Matrix(A)) \ b ≈ UnitLowerTriangular(A) \ b
 
     LA = FastAlmostBandedMatrices.LazyArrays
-    # `Vcat(v, Zeros)` already has `PaddedColumns` layout on the LazyArrays 2.0
-    # compat floor. LazyArrays 2.13 added its own padded upper-triangular
-    # `materialize!`, which is what created the ambiguity, but the intersection
-    # methods are selected for in-place `ldiv!` on the whole compat range.
-    # Out-of-place `\` on older LazyArrays copies the RHS to a dense `Vector`
-    # first and therefore misses this path (hitting the pre-existing broken
-    # dense-fill upper solve instead).
+    # In-place `ldiv!` on `Vcat(v, Zeros)` uses these methods for all LazyArrays
+    # 2.x; out-of-place `\` only keeps a padded RHS from LazyArrays 2.13.
     bpad = LA.Vcat(b[1:5], LA.Zeros(n - 5))
     @test ldiv!(UpperTriangular(A), copy(bpad)) ≈
         UpperTriangular(Matrix(A)) \ Vector(bpad)
@@ -213,6 +208,30 @@ end
         @test UnitUpperTriangular(A) \ bpad ≈
             UnitUpperTriangular(Matrix(A)) \ Vector(bpad)
     end
+
+    # Negative upper bandwidths: only strictly-upper columns may be subtracted.
+    for u in (-1, -2)
+        F = [
+            2.0 0.1 0.2 0.3
+            0.1 2.0 0.3 0.2
+            0.2 0.3 2.0 0.1
+            0.3 0.2 0.1 2.0
+        ]
+        Aneg = AlmostBandedMatrix(BandedMatrix(zeros(4, 4), (3, u)), F)
+        bneg = LA.Vcat([1.0, 2.0], LA.Zeros(2))
+        for Tri in (UpperTriangular, UnitUpperTriangular)
+            @test ldiv!(Tri(Aneg), copy(bneg)) ≈ Tri(Matrix(Aneg)) \ Vector(bneg)
+        end
+    end
+
+    Asing = AlmostBandedMatrix(BandedMatrix(zeros(4, 4), (1, 1)), zeros(1, 4))
+    Asing[band(0)] .= 2
+    Asing[2, 2] = 0
+    bsing = LA.Vcat([1.0, 2.0], LA.Zeros(2))
+    @test_throws SingularException(2) ldiv!(UpperTriangular(Asing), copy(bsing))
+    @test_throws SingularException(2) ldiv!(
+        UpperTriangular(Matrix(Asing)), copy(Vector(bsing))
+    )
 end
 
 # https://github.com/SciML/FastAlmostBandedMatrices.jl/issues/19
