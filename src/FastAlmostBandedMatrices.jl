@@ -6,10 +6,11 @@ import ArrayInterface
 import ArrayLayouts
 import ArrayLayouts: LayoutMatrix, LayoutVector, Ldiv, Lmul, TriangularLayout
 import ConcreteStructs: @concrete
+import LazyArrays
 import LazyArrays: LazyArray, Mul
 import LinearAlgebra
-import LinearAlgebra: LowerTriangular, NoPivot, UnitLowerTriangular, UnitUpperTriangular,
-    UpperTriangular, diagind, lmul!, lu, qr, rank, triu!
+import LinearAlgebra: LowerTriangular, NoPivot, SingularException, UnitLowerTriangular,
+    UnitUpperTriangular, UpperTriangular, diagind, lmul!, lu, qr, rank, triu!
 import MatrixFactorizations
 
 # The BandedMatrices.jl surface that FastAlmostBandedMatrices reexports (see the second
@@ -813,6 +814,47 @@ function Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'U', AlmostBanded
     _almostbanded_upper_ldiv!(UnitUpperTriangular, A, x, Vector{eltype(M)}(undef, r))
     return x
 end
+
+# A padded right-hand side is zero past its data, so an upper-triangular solve only
+# needs the leading square block; the `Zeros` tail cannot be written into anyway.
+# Back-substitute on that prefix in-place (O(n) storage). Densifying the leading
+# block would be O(n²), and the existing almost-banded upper `materialize!` path
+# cannot be reused here: it goes through `__original_almostbandedrank` / a
+# `SubArray` of `AlmostBandedMatrix` and is already `@test_broken` for a dense fill.
+@views function _padded_upper_ldiv!(Tri, R, x)
+    A = triangulardata(R)
+    b = view(x, colsupport(x))
+    n = length(b)
+    iszero(n) && return x
+    unit = Tri === UnitUpperTriangular
+    Av = view(A, 1:n, 1:n)
+    rnk = almostbandedrank(Av)
+    _, u = almostbandwidths(Av)
+    for k in n:-1:1
+        s = b[k]
+        # Superdiagonals only: `k + u` can be < `k` when `u` is negative.
+        jmax_band = min(n, k + u)
+        for j in (k + 1):jmax_band
+            s -= Av[k, j] * b[j]
+        end
+        if k <= rnk
+            for j in max(jmax_band + 1, k + 1):n
+                s -= Av[k, j] * b[j]
+            end
+        end
+        if unit
+            b[k] = s
+        else
+            akk = Av[k, k]
+            iszero(akk) && throw(SingularException(k))
+            b[k] = s / akk
+        end
+    end
+    return x
+end
+
+Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'N', AlmostBandedLayout}, <:LazyArrays.PaddedColumns}) = _padded_upper_ldiv!(UpperTriangular, M.A, M.B)
+Base.materialize!(M::MatLdivVec{TriangularLayout{'U', 'U', AlmostBandedLayout}, <:LazyArrays.PaddedColumns}) = _padded_upper_ldiv!(UnitUpperTriangular, M.A, M.B)
 
 function Base.materialize!(M::MatLdivVec{TriangularLayout{'L', 'N', AlmostBandedLayout}})
     R, x = M.A, M.B

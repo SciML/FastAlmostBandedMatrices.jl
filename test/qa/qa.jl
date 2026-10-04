@@ -32,6 +32,8 @@ run_qa(
             ignore = (
                 :OneTo, :array_summary, :dims2string, :inds2string, :materialize!,
                 :QRPackedQ, :arguments, :fast_scalar_indexing, :qr_instance,
+                # needed to name LazyArrays' padded layout to resolve the ambiguity; not public in LazyArrays as of the tested version
+                :PaddedColumns,
             ),
         ),
     ),
