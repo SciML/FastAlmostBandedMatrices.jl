@@ -21,12 +21,9 @@ A_dense = Matrix(A)
 
 SUITE["construct"] = BenchmarkGroup()
 
-SUITE["construct"]["almost_banded"] = @benchmarkable AlmostBandedMatrix(
-    $banded_part, $fill_part
-)
-SUITE["construct"]["banded"] = @benchmarkable BandedMatrix(
-    $(rand(rng, n, n)), (3, 2)
-)
+SUITE["construct"]["almost_banded"] =
+    @benchmarkable AlmostBandedMatrix($banded_part, $fill_part)
+SUITE["construct"]["banded"] = @benchmarkable BandedMatrix($(rand(rng, n, n)), (3, 2))
 
 # =============================================================================
 # Operations
